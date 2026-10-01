@@ -1,0 +1,7 @@
+node_modules/
+out/
+dist/
+release/
+native/hook-helper/build/
+*.log
+.DS_Store
