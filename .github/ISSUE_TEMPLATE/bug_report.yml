@@ -14,14 +14,14 @@ body:
     attributes:
       label: lolPing version
       description: Settings → About shows it.
-      placeholder: 0.1.0
+      placeholder: 0.2.0
     validations:
       required: true
   - type: input
-    id: windows
+    id: os
     attributes:
-      label: Windows version
-      placeholder: Windows 11 24H2
+      label: Windows or macOS version
+      placeholder: Windows 11 24H2, or macOS 15.4 on an M2
   - type: textarea
     id: setup
     attributes:

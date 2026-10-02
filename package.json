@@ -1,9 +1,9 @@
 {
   "name": "lolping",
   "productName": "lolPing",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "League of Legends style ping wheel for your Windows desktop",
+  "description": "League of Legends style ping wheel for your Windows and macOS desktop",
   "author": "Danrui Meng (https://github.com/danruimeng)",
   "license": "MIT",
   "homepage": "https://github.com/danruimeng/lolPing#readme",
@@ -16,9 +16,10 @@
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build:helper": "native\\hook-helper\\build.cmd",
-    "test:helper": "npm run build:helper && native\\hook-helper\\build\\helper_tests.exe",
+    "build:helper": "node native/hook-helper/run.mjs build",
+    "test:helper": "node native/hook-helper/run.mjs test",
     "dist": "npm run build:helper && electron-vite build && electron-builder --win --publish never",
+    "dist:mac": "npm run build:helper && electron-vite build && electron-builder --mac --arm64 --publish never",
     "dev:site": "vite --config site/vite.config.ts",
     "build:site": "vite build --config site/vite.config.ts",
     "media": "npm run build:site && electron tools/capture-media/capture.mjs"
@@ -44,14 +45,32 @@
     "productName": "lolPing",
     "directories": { "output": "release", "buildResources": "build" },
     "files": ["out/**/*", "package.json"],
-    "extraResources": [{ "from": "native/hook-helper/build/hook-helper.exe", "to": "hook-helper.exe" }],
-    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "build/icon.ico" },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.ico",
+      "extraResources": [{ "from": "native/hook-helper/build/hook-helper.exe", "to": "hook-helper.exe" }]
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "artifactName": "lolPing-Setup-${version}.exe",
       "include": "build/installer.nsh"
-    }
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["arm64"] }],
+      "icon": "build/icon.png",
+      "category": "public.app-category.utilities",
+      "identity": "-",
+      "hardenedRuntime": false,
+      "extraResources": [
+        { "from": "native/hook-helper/build/hook-helper", "to": "hook-helper" },
+        { "from": "build", "to": ".", "filter": ["tray*Template*.png"] }
+      ],
+      "extendInfo": {
+        "NSAccessibilityUsageDescription": "lolPing reads the mouse and keyboard to open the ping wheel when you hold the trigger key and drag."
+      }
+    },
+    "dmg": { "artifactName": "lolPing-${version}-arm64.dmg" }
   }
 }
