@@ -1,9 +1,14 @@
 import { LANGUAGE_PREFS, strings, type Lang, type LanguagePref } from './i18n';
 import { HOTKEY_PRIMARY_MODS, MOD, type Hotkey, vkLabel } from './keys';
+import type { Platform } from './platform';
 
 export type NamedTrigger = 'alt' | 'ctrl' | 'shift' | 'win' | 'capslock' | 'mouse4' | 'mouse5';
 export type TriggerKey = NamedTrigger | { vk: number };
 export const NAMED_TRIGGERS: readonly NamedTrigger[] = ['alt', 'ctrl', 'shift', 'win', 'capslock', 'mouse4', 'mouse5'];
+
+/** Keyboard triggers offered on each platform. macOS can't reliably stop Caps Lock from toggling, so it isn't offered. */
+export const keyboardTriggers = (platform: Platform): NamedTrigger[] =>
+  platform === 'mac' ? ['alt', 'ctrl', 'shift', 'win'] : ['alt', 'ctrl', 'shift', 'win', 'capslock'];
 
 export interface Settings {
   version: 1;
@@ -59,7 +64,8 @@ function num(raw: unknown, key: NumKey): number {
 
 const bool = (raw: unknown, key: BoolKey): boolean => (typeof raw === 'boolean' ? raw : DEFAULT_SETTINGS[key]);
 
-function trigger(raw: unknown): TriggerKey {
+function trigger(raw: unknown, platform: Platform): TriggerKey {
+  if (platform === 'mac' && raw === 'capslock') return DEFAULT_SETTINGS.trigger;
   if (typeof raw === 'string' && (NAMED_TRIGGERS as readonly string[]).includes(raw)) return raw as NamedTrigger;
   if (isObj(raw) && isVk(raw.vk)) return { vk: raw.vk };
   return DEFAULT_SETTINGS.trigger;
@@ -76,13 +82,13 @@ function hotkey(raw: unknown): Hotkey {
   return { ...DEFAULT_SETTINGS.toggleHotkey };
 }
 
-/** Turns anything (parsed JSON, IPC payloads) into a complete, valid Settings object. */
-export function normalizeSettings(raw: unknown): Settings {
+/** Turns anything (parsed JSON, IPC payloads) into a complete, valid Settings object for `platform`. */
+export function normalizeSettings(raw: unknown, platform: Platform = 'win'): Settings {
   const r = isObj(raw) ? raw : {};
   return {
     version: 1,
     enabledOnStart: bool(r.enabledOnStart, 'enabledOnStart'),
-    trigger: trigger(r.trigger),
+    trigger: trigger(r.trigger, platform),
     dragThresholdPx: num(r.dragThresholdPx, 'dragThresholdPx'),
     clickPing: bool(r.clickPing, 'clickPing'),
     toggleHotkey: hotkey(r.toggleHotkey),
@@ -96,18 +102,20 @@ export function normalizeSettings(raw: unknown): Settings {
   };
 }
 
-export function mergeSettings(current: Settings, patch: Partial<Settings>): Settings {
-  return normalizeSettings({ ...current, ...patch });
+export function mergeSettings(current: Settings, patch: Partial<Settings>, platform: Platform = 'win'): Settings {
+  return normalizeSettings({ ...current, ...patch }, platform);
 }
 
-const KEY_LABELS: Record<Exclude<NamedTrigger, 'mouse4' | 'mouse5'>, string> = {
-  alt: 'Alt', ctrl: 'Ctrl', shift: 'Shift', win: 'Win', capslock: 'Caps Lock',
+type KeyTrigger = Exclude<NamedTrigger, 'mouse4' | 'mouse5'>;
+const KEY_LABELS: Record<Platform, Record<KeyTrigger, string>> = {
+  win: { alt: 'Alt', ctrl: 'Ctrl', shift: 'Shift', win: 'Win', capslock: 'Caps Lock' },
+  mac: { alt: '⌥ Option', ctrl: '⌃ Control', shift: '⇧ Shift', win: '⌘ Command', capslock: '⇪ Caps Lock' },
 };
 
-export function triggerLabel(t: TriggerKey, lang: Lang = 'en'): string {
-  if (typeof t === 'object') return vkLabel(t.vk);
+export function triggerLabel(t: TriggerKey, lang: Lang = 'en', platform: Platform = 'win'): string {
+  if (typeof t === 'object') return vkLabel(t.vk, platform);
   if (t === 'mouse4' || t === 'mouse5') return strings(lang)[t];
-  return KEY_LABELS[t];
+  return KEY_LABELS[platform][t];
 }
 
 export type OverlaySettings = Pick<Settings, 'pingSizePx' | 'pingDurationS' | 'volume' | 'muted' | 'tickSound'>;

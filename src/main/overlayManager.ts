@@ -4,7 +4,7 @@ import type { PingId } from '../shared/pings';
 import type { HelperEvent } from '../shared/protocol';
 import type { OverlaySettings } from '../shared/settings';
 import { physicalToLocal, type DisplayMap } from './coords';
-import { loadPage, preloadPath } from './paths';
+import { IS_MAC, loadPage, preloadPath } from './paths';
 
 /** One transparent, click-through, always-on-top window per display. */
 export class OverlayManager {
@@ -86,7 +86,10 @@ export class OverlayManager {
   private rebuild(): void {
     this.cancelWheel();
     const displays = screen.getAllDisplays();
-    this.maps = displays.map((d) => ({ id: d.id, dip: d.bounds, phys: screen.dipToScreenRect(null, d.bounds), scale: d.scaleFactor }));
+    // The macOS helper already reports points in Electron's DIP space; dipToScreenRect only exists on Windows.
+    this.maps = displays.map((d) => IS_MAC
+      ? { id: d.id, dip: d.bounds, phys: d.bounds, scale: 1 }
+      : { id: d.id, dip: d.bounds, phys: screen.dipToScreenRect(null, d.bounds), scale: d.scaleFactor });
     for (const [id, win] of this.windows) {
       if (!displays.some((d) => d.id === id)) {
         win.destroy();
@@ -115,9 +118,9 @@ export class OverlayManager {
       skipTaskbar: true,
       hasShadow: false,
       alwaysOnTop: true,
-      enableLargerThanScreen: true,
+      enableLargerThanScreen: true, // also stops macOS pushing the window below the menu bar
       show: false,
-      type: 'toolbar',
+      type: IS_MAC ? 'panel' : 'toolbar', // a macOS panel can float over full-screen apps
       webPreferences: {
         preload: preloadPath('overlay'),
         backgroundThrottling: false,
@@ -127,6 +130,7 @@ export class OverlayManager {
     });
     win.setIgnoreMouseEvents(true);
     win.setAlwaysOnTop(true, 'screen-saver');
+    if (IS_MAC) win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
     win.webContents.on('did-finish-load', () => win.webContents.send('overlay:settings', this.settings));
     win.once('ready-to-show', () => {
       win.showInactive();

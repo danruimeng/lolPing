@@ -39,3 +39,9 @@ main.content { overflow: auto; padding: 4px 28px 28px 20px; }
 .keys { display: flex; align-items: center; gap: 4px; }
 .keys kbd { font: 600 12px "Segoe UI"; padding: 3px 8px; border-radius: 4px; background: var(--colorBrandBackground); color: var(--colorNeutralForegroundOnBrand); }
 @media (max-width: 760px) { .app { grid-template-columns: 1fr; } nav.side { display: none; } }
+.statusPing { display: none; }
+.card.permission { align-items: flex-start; border-color: #ff9c48; }
+.card.permission .icon { padding-top: 14px; color: #ff9c48; }
+.card.permission .lbl { padding: 12px 0; }
+.card.permission ol { margin: 6px 0 12px; padding-left: 18px; }
+.card.permission .actions { display: flex; gap: 8px; }

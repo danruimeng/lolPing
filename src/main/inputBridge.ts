@@ -2,7 +2,7 @@ import { spawn, type ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { createInterface } from 'node:readline';
 import {
-  parseHelperLine, serializeCommand, type HelperCommand, type HelperStatus,
+  HELPER_EXIT_NO_ACCESS, parseHelperLine, serializeCommand, type HelperCommand, type HelperStatus,
 } from '../shared/protocol';
 import { RestartPolicy } from './restartPolicy';
 
@@ -14,7 +14,9 @@ export interface BridgeOptions {
 }
 
 /**
- * Runs hook-helper.exe, parses its stdout and restarts it when it crashes.
+ * Runs the hook helper, parses its stdout and restarts it when it crashes.
+ * An exit with HELPER_EXIT_NO_ACCESS (macOS Accessibility missing) is not a crash: the status becomes 'noAccess'
+ * and the helper stays stopped until `retry()`.
  * Events: 'event' (HelperEvent), 'status' (HelperStatus), 'log' (string).
  */
 export class InputBridge extends EventEmitter {
@@ -44,15 +46,15 @@ export class InputBridge extends EventEmitter {
     const child = spawn(this.opts.command, this.opts.args ?? [], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true });
     this.child = child;
     let gone = false;
-    const onGone = (reason: string) => {
+    const onGone = (reason: string, code: number | null = null) => {
       if (gone) return;
       gone = true;
       if (this.child !== child) return; // superseded child: not a crash of the current helper
       this.child = null;
-      this.onExit(reason);
+      this.onExit(reason, code);
     };
     child.on('error', (err) => onGone(err.message));
-    child.on('exit', (code) => onGone(`exit code ${code}`));
+    child.on('exit', (code) => onGone(`exit code ${code}`, code));
     child.stdin?.on('error', () => undefined); // EPIPE after a crash; 'exit' handles it
     if (child.stdout) createInterface({ input: child.stdout }).on('line', (line) => this.onLine(line));
     if (child.stderr) createInterface({ input: child.stderr }).on('line', (line) => this.emit('log', line));
@@ -112,9 +114,13 @@ export class InputBridge extends EventEmitter {
     this.emit('event', ev);
   }
 
-  private onExit(reason: string): void {
+  private onExit(reason: string, code: number | null): void {
     if (this.stopping) return;
     this.emit('log', `hook helper stopped: ${reason}`);
+    if (code === HELPER_EXIT_NO_ACCESS) {
+      this.setStatus('noAccess');
+      return;
+    }
     const delay = this.policy.onExit(this.now());
     if (delay === 'giveUp') {
       this.setStatus('failed');

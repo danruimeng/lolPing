@@ -9,6 +9,8 @@ function subscribe<T>(channel: string, cb: (v: T) => void): () => void {
 }
 
 const api: SettingsApi = {
+  // Inlined rather than imported: a sandboxed preload can't require a shared chunk.
+  platform: process.platform === 'darwin' ? 'mac' : 'win',
   getSettings: () => ipcRenderer.invoke(SETTINGS_CH.get),
   setSettings: (patch) => ipcRenderer.invoke(SETTINGS_CH.set, patch),
   onSettings: (cb) => subscribe(SETTINGS_CH.changed, cb),
@@ -21,6 +23,7 @@ const api: SettingsApi = {
   openProjectPage: () => ipcRenderer.invoke(SETTINGS_CH.openProject),
   retryHelper: () => ipcRenderer.invoke(SETTINGS_CH.retryHelper),
   setCapturing: (on) => ipcRenderer.invoke(SETTINGS_CH.capture, on),
+  openAccessibility: () => ipcRenderer.invoke(SETTINGS_CH.openAccessibility),
 };
 
 contextBridge.exposeInMainWorld('settingsApi', api);

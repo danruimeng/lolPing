@@ -1,11 +1,12 @@
 import { Dropdown, Option, OptionGroup } from '@fluentui/react-components';
 import { useState } from 'react';
 import { UNSAFE_TRIGGER_VKS, vkLabel } from '../../../shared/keys';
-import { triggerLabel, type NamedTrigger, type TriggerKey } from '../../../shared/settings';
+import { keyboardTriggers, triggerLabel, type NamedTrigger, type TriggerKey } from '../../../shared/settings';
+import { api } from '../api';
 import { useText } from '../text';
 import { KeyCapture } from './KeyCapture';
 
-const KEYBOARD: NamedTrigger[] = ['alt', 'ctrl', 'shift', 'win', 'capslock'];
+const KEYBOARD: NamedTrigger[] = keyboardTriggers(api.platform);
 
 /** Fluent Dropdown (never a native <select>) with Keyboard / Mouse groups and a custom key option. */
 export function TriggerPicker({ value, onChange }: { value: TriggerKey; onChange(t: TriggerKey): void }) {
@@ -20,7 +21,7 @@ export function TriggerPicker({ value, onChange }: { value: TriggerKey; onChange
       {showCustom ? (
         <KeyCapture
           key={choosingCustom ? 'choosing' : 'idle'}
-          parts={isCustom ? [vkLabel(value.vk)] : [t.chooseKey]}
+          parts={isCustom ? [vkLabel(value.vk, api.platform)] : [t.chooseKey]}
           requireModifier={false}
           forbiddenVks={UNSAFE_TRIGGER_VKS}
           autoListen={choosingCustom}
@@ -33,7 +34,7 @@ export function TriggerPicker({ value, onChange }: { value: TriggerKey; onChange
       ) : null}
       <Dropdown
         style={{ minWidth: 170 }}
-        value={showCustom ? t.customKey : triggerLabel(value, t.lang)}
+        value={showCustom ? t.customKey : triggerLabel(value, t.lang, api.platform)}
         selectedOptions={[selected]}
         onOptionSelect={(_, d) => {
           if (d.optionValue === 'custom') {
@@ -46,7 +47,7 @@ export function TriggerPicker({ value, onChange }: { value: TriggerKey; onChange
       >
         <OptionGroup label={t.keyboard}>
           {KEYBOARD.map((k) => (
-            <Option key={k} value={k}>{triggerLabel(k)}</Option>
+            <Option key={k} value={k}>{triggerLabel(k, t.lang, api.platform)}</Option>
           ))}
         </OptionGroup>
         <OptionGroup label={t.mouse}>
