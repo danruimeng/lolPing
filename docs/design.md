@@ -1,7 +1,7 @@
 # lolPing — Design Spec
 
 **Date:** 2026-10-01
-**Status:** Draft for review
+**Status:** Implemented in v0.1.0
 
 ## 1. Purpose
 
@@ -53,7 +53,7 @@ Unused extracted files stay in `assets/` but are never referenced: the `_cb` tex
 
 ### 3.2 Asset pipeline (already run; kept reproducible)
 
-The extraction scripts move from the session scratchpad to `tools/extract-assets/`, together with a README. Each step:
+The extraction scripts live in `tools/extract-assets/`, together with a README. Each step:
 
 1. **Textures:** DDS (DXT5) → PNG with Pillow.
 2. **Sound banks:** read the WAD v3 table of contents with a small Python reader (Python 3.14 has built-in zstd). Names come from CommunityDragon's `hashes.game.txt` list, filtered to sound banks. The ping banks are in `DATA/FINAL/Maps/Shipping/Common.wad.client`:
@@ -112,7 +112,7 @@ lolPing/
   assets/textures, assets/sounds
   tools/extract-assets/
   prototype/                   throwaway demos (wheel-demo.html, settings-demo.html)
-  docs/design.md
+  docs/design.md               this document
 ```
 
 ## 5. Hook helper
@@ -177,7 +177,7 @@ All coordinates are **physical screen pixels**.
 
 ## 7. Overlay renderer
 
-### 7.1 Wheel (matches the user's reference screenshot and the approved `prototype/wheel-demo.html`)
+### 7.1 Wheel (matches the in-game reference screenshot and `prototype/wheel-demo.html`)
 
 **Geometry:** SVG centered on the press point.
 
@@ -196,7 +196,7 @@ All coordinates are **physical screen pixels**.
   - Moving onto a new slice plays `button.wav` at low volume, if the tick sound is enabled.
 - **Animation:** opens with fade + scale 0.85 → 1 over 120 ms, closes with a fade.
 
-### 7.2 Ping animation (approved in the prototype)
+### 7.2 Ping animation (as in the prototype)
 
 The default duration is 3.2 s and scales with the "ping duration" setting. The art is drawn at "ping size" (default 110 px) and anchored so the ground ellipse sits on the press point.
 
@@ -236,7 +236,7 @@ Several pings can be on screen at once, and each is independent.
 
 Changes apply live, with no Save button. Writes are debounced (300 ms) and atomic (write a temp file, then rename).
 
-### 8.2 Settings window (matches the approved `prototype/settings-demo.html`)
+### 8.2 Settings window (matches `prototype/settings-demo.html`)
 
 - **Window:** Fluent UI React v9 components, `backgroundMaterial: 'mica'`, theme follows Windows light/dark, Windows 11 caption buttons, left navigation (Trigger, Toggle, Pings & sound, Preview, App), Windows 11 Settings–style cards.
 - **Status card:** at the top, a master on/off switch with a live hint ("Hold Alt and drag… · Ctrl + Alt + P to turn off"). Turning it off dims the dependent cards.

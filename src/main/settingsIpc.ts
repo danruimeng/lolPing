@@ -5,6 +5,8 @@ import { pingById, type PingId } from '../shared/pings';
 import type { Settings } from '../shared/settings';
 import type { SettingsStore } from './settingsStore';
 
+const PROJECT_URL = 'https://github.com/danruimeng/lolPing';
+
 export interface SettingsIpcDeps {
   store: SettingsStore;
   getStatus(): AppStatus;
@@ -47,6 +49,9 @@ export function registerSettingsIpc(d: SettingsIpcDeps): void {
   ipcMain.handle(SETTINGS_CH.about, () => d.about());
   ipcMain.handle(SETTINGS_CH.openFolder, async () => {
     await shell.openPath(d.store.dir);
+  });
+  ipcMain.handle(SETTINGS_CH.openProject, async () => {
+    await shell.openExternal(PROJECT_URL);
   });
   ipcMain.handle(SETTINGS_CH.retryHelper, () => d.retryHelper());
   ipcMain.handle(SETTINGS_CH.capture, (_e, on: unknown) => d.setCapturing(on === true));

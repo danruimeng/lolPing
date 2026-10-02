@@ -18,6 +18,7 @@ const api: SettingsApi = {
   previewPing: (id) => ipcRenderer.invoke(SETTINGS_CH.preview, id),
   getAbout: () => ipcRenderer.invoke(SETTINGS_CH.about),
   openSettingsFolder: () => ipcRenderer.invoke(SETTINGS_CH.openFolder),
+  openProjectPage: () => ipcRenderer.invoke(SETTINGS_CH.openProject),
   retryHelper: () => ipcRenderer.invoke(SETTINGS_CH.retryHelper),
   setCapturing: (on) => ipcRenderer.invoke(SETTINGS_CH.capture, on),
 };

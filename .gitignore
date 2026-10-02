@@ -2,6 +2,7 @@ node_modules/
 out/
 dist/
 release/
+site-dist/
 native/hook-helper/build/
 *.log
 .DS_Store

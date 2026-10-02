@@ -55,6 +55,7 @@ export interface SettingsApi {
   previewPing(id: PingId): Promise<void>;
   getAbout(): Promise<About>;
   openSettingsFolder(): Promise<void>;
+  openProjectPage(): Promise<void>;
   retryHelper(): Promise<void>;
   setCapturing(on: boolean): Promise<void>;
 }

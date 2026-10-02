@@ -27,6 +27,8 @@ main.content { overflow: auto; padding: 4px 28px 28px 20px; }
 .desc.inline { display: inline; margin-left: 6px; }
 .card .ctl { display: flex; align-items: center; gap: 10px; }
 .value { min-width: 56px; text-align: right; font-variant-numeric: tabular-nums; }
+/* Fluent draws a tick per step on the rail; with 38-100 steps they merge into a dark dashed line. */
+.card .fui-Slider__rail::before { background-image: none; }
 .status { min-height: 76px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; background: #6ccb5f; box-shadow: 0 0 8px #6ccb5f; }
 .dot.off { background: var(--text3); box-shadow: none; }

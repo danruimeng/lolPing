@@ -1,0 +1,37 @@
+name: Release
+
+# Push a tag that matches package.json's version (for example v0.1.0) to build the installer and publish it.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Check the tag matches package.json
+        shell: bash
+        run: test "v$(node -p "require('./package.json').version")" = "$GITHUB_REF_NAME"
+      - run: npm ci
+      - run: npm run test:helper
+      - run: npm test
+      - run: npm run dist
+      - name: Publish the installer
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          exe="release/lolPing-Setup-${GITHUB_REF_NAME#v}.exe"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$exe" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$exe" --title "lolPing $GITHUB_REF_NAME" --generate-notes
+          fi

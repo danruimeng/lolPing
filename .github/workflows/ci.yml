@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      # Builds hook-helper.exe and runs the C++ tests. The TypeScript tests need the built helper.
+      - run: npm run test:helper
+      - run: npm test
+      - run: npm run build
+      - run: npm run build:site

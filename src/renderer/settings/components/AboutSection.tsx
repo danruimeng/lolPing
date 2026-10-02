@@ -13,6 +13,7 @@ export function AboutSection({ icon }: { icon: ReactNode }) {
   return (
     <>
       <SettingRow icon={icon} title="About" description={`lolPing ${about.version} · Ping icons and sounds © Riot Games`}>
+        <Button onClick={() => void api.openProjectPage()}>GitHub page</Button>
         <Button onClick={() => void api.openSettingsFolder()}>Open settings folder</Button>
       </SettingRow>
       {about.problems.length > 0 ? (

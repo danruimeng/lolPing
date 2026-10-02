@@ -9,6 +9,7 @@ export const SETTINGS_CH = {
   preview: 'app:preview',
   about: 'app:about',
   openFolder: 'app:openSettingsFolder',
+  openProject: 'app:openProjectPage',
   retryHelper: 'app:retryHelper',
   capture: 'app:capture',
 } as const;

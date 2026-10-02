@@ -4,6 +4,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "League of Legends style ping wheel for your Windows desktop",
+  "author": "Danrui Meng (https://github.com/danruimeng)",
+  "license": "MIT",
+  "homepage": "https://github.com/danruimeng/lolPing#readme",
+  "repository": { "type": "git", "url": "https://github.com/danruimeng/lolPing.git" },
+  "bugs": "https://github.com/danruimeng/lolPing/issues",
   "main": "out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
@@ -13,7 +18,10 @@
     "test": "vitest run",
     "build:helper": "native\\hook-helper\\build.cmd",
     "test:helper": "npm run build:helper && native\\hook-helper\\build\\helper_tests.exe",
-    "dist": "npm run build:helper && electron-vite build && electron-builder --win --publish never"
+    "dist": "npm run build:helper && electron-vite build && electron-builder --win --publish never",
+    "dev:site": "vite --config site/vite.config.ts",
+    "build:site": "vite build --config site/vite.config.ts",
+    "media": "npm run build:site && electron tools/capture-media/capture.mjs"
   },
   "devDependencies": {
     "@fluentui/react-components": "9.74.9",
@@ -38,6 +46,12 @@
     "files": ["out/**/*", "package.json"],
     "extraResources": [{ "from": "native/hook-helper/build/hook-helper.exe", "to": "hook-helper.exe" }],
     "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "icon": "build/icon.ico" },
-    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true }
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "lolPing-Setup-${version}.exe",
+      "include": "build/installer.nsh"
+    }
   }
 }

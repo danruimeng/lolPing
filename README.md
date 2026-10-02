@@ -1,49 +1,102 @@
-# lolPing
+<h1 align="center"><img src="assets/textures/generic_ping.png" width="56" alt=""><br>lolPing</h1>
 
-League of Legends–style ping wheel for your Windows desktop. Hold **Alt**, drag, and release on a slice to drop an animated ping, with its original sound, anywhere on any monitor.
+<p align="center">
+  League of Legends pings for your whole Windows desktop.<br>
+  Hold <b>Alt</b>, drag, and let go on a ping. The animation pops and the sound plays on top of any app, on any monitor.
+</p>
 
-Pings show up in whole-screen capture (Discord "Screen", OBS Display Capture, screenshots).
+<p align="center">
+  <a href="https://github.com/danruimeng/lolPing/releases/latest"><b>Download for Windows</b></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/danruimeng/lolPing/actions/workflows/ci.yml"><img src="https://github.com/danruimeng/lolPing/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/danruimeng/lolPing/releases/latest"><img src="https://img.shields.io/github/v/release/danruimeng/lolPing" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/danruimeng/lolPing" alt="MIT license"></a>
+</p>
+
+<p align="center"><img src="docs/media/demo.gif" width="880" alt="An app freezes with a not-responding dialog, and the ping wheel drops three Enemy Missing pings on it"></p>
+
+Pings show up in whole-screen capture, so friends watching your Discord or OBS stream see them too. lolPing is a desktop toy: it doesn't read, change or hook into League itself.
+
+## Install
+
+1. Download `lolPing-Setup-<version>.exe` from the [latest release](https://github.com/danruimeng/lolPing/releases/latest).
+2. Run it. The installer isn't code-signed, so Windows SmartScreen may say "Windows protected your PC". Select **More info**, then **Run anyway**.
+3. lolPing opens its settings and moves to the tray. Hold Alt and drag anywhere to ping.
+
+lolPing is built for Windows 11, 64-bit. Windows 10 may work, but it isn't tested.
 
 ## Use
 
-- **Alt + drag** opens the wheel. Release on a slice to ping; release in the centre, right-click or press Esc to cancel.
-- **Ctrl + Alt + P** turns pinging on and off.
-- **Tray icon:** left-click opens Settings. In Settings you can change:
-  - the trigger key (Alt, Ctrl, Shift, Win, Caps Lock, Mouse 4/5 or any key)
-  - whether Alt + click places a generic ping
-  - the toggle shortcut
-  - ping size, duration and volume
-  - launch at startup
+| To | Do this |
+| --- | --- |
+| Ping | Hold **Alt**, drag, and let go on a slice |
+| Cancel | Let go in the centre, right-click, or press **Esc** |
+| Pause or resume pinging | **Ctrl + Alt + P** |
+| Open settings | Click the tray icon |
+| Quit, or restart the input helper | Right-click the tray icon |
 
-Wheel, top then clockwise: Danger · Push · On My Way · All In · Assist Me · Need Vision · Enemy Missing · Enemy Vision.
+The wheel, from the top going clockwise: Danger, Push, On My Way, All In, Assist Me, Need Vision, Enemy Missing, Enemy Vision.
+
+## Settings
+
+<img src="docs/media/settings.png" width="760" alt="The lolPing settings window">
+
+- **Trigger key:** Alt, Ctrl, Shift, Win, Caps Lock, Mouse 4, Mouse 5 or any other key. The custom key won't type in other apps while pinging is on.
+- **Alt + click places a generic ping:** off by default, so ordinary Alt + click shortcuts keep working.
+- **Enable / disable shortcut:** must include Ctrl, Alt or Win.
+- **Pings and sound:** size, duration, volume, mute and the wheel's tick sound, with a preview of every ping.
+- **Launch at Windows startup:** starts hidden in the tray.
+
+Settings are saved in `%APPDATA%\lolPing\settings.json`.
+
+## Known limitations
+
+- The wheel can't open over windows running as administrator, such as Task Manager. Windows hides their input from normal apps.
+- Exclusive-fullscreen games draw above the overlay.
+- Sharing a single window doesn't include the pings. Share your entire screen instead.
 
 ## Build from source
 
-Requirements: Windows 11, Node 22.12+, and Visual Studio 2022 with the "Desktop development with C++" workload.
+You need Windows 11, Node 22.12 or later, and Visual Studio 2022 or later with the "Desktop development with C++" workload.
 
 ```bash
 npm install
+npx install-electron
 npm run build:helper
 npm run dev
 ```
 
-Other commands:
-- `npm test`: TypeScript tests. They include a protocol test that runs the real helper in `--simulate` mode.
-- `npm run test:helper`: C++ tests for the input logic.
-- `npm run dist`: builds the installer into `release/`.
+`npx install-electron` downloads the Electron binary that `npm run dev` needs.
+
+| Command | What it does |
+| --- | --- |
+| `npm test` | TypeScript tests, including a protocol test that runs the real helper in `--simulate` mode |
+| `npm run test:helper` | Builds the helper and runs its C++ tests |
+| `npm run typecheck` | Type-checks everything |
+| `npm run dist` | Builds the installer into `release/` |
+| `npm run dev:site` | Serves a browser demo of the wheel (`site/`) |
+| `npm run media` | Re-records `docs/media/demo.gif` and `docs/media/og.png` from that demo (needs ffmpeg) |
+
+### Releasing
+
+Bump `version` in `package.json`, commit, then push a matching tag such as `v0.2.0`. The Release workflow builds the installer and attaches it to a GitHub release.
 
 ## How it works
 
-- **Input:** `native/hook-helper` is a small C++ process. It owns the low-level mouse and keyboard hooks and swallows the Alt+drag so the app underneath never sees it. It talks to Electron as JSON lines over stdin/stdout.
-- **Display:** Electron draws the wheel and pings in one transparent, click-through, always-on-top window per monitor, and plays sounds through Web Audio.
-- **Details:** see `docs/design.md`.
+- **Input:** [`native/hook-helper`](native/hook-helper) is a small C++ process that owns the low-level mouse and keyboard hooks. It swallows the Alt + drag so the app underneath never sees it, and talks to Electron in JSON lines over stdin and stdout.
+- **Display:** Electron draws the wheel and pings in one transparent, click-through, always-on-top window per monitor ([`src/renderer/overlay`](src/renderer/overlay)), and plays the sounds through Web Audio.
+- **Settings:** a Fluent UI window ([`src/renderer/settings`](src/renderer/settings)) with Mica.
+- **Demo page:** [`site`](site) runs the same overlay code in the browser, with a small input shim in place of the helper. The README GIF is recorded from it.
+- **Design notes:** [docs/design.md](docs/design.md) covers the protocol, the input state machine and the multi-monitor maths.
 
-## Limitations
+## Ping assets
 
-- The wheel can't be triggered over elevated (administrator) windows such as Task Manager.
-- Exclusive-fullscreen games draw above the overlay.
-- Single-window screen capture doesn't include the overlay.
+The icons in `assets/textures` and the sounds in `assets/sounds` come from a local League of Legends install. [`tools/extract-assets`](tools/extract-assets) explains how to extract them again after a patch.
 
-## Assets
+## License
 
-Ping icons and sounds are © Riot Games, extracted from League of Legends. See `tools/extract-assets`.
+The code is under the [MIT license](LICENSE). The ping icons and sounds are © Riot Games and aren't covered by it. If you represent Riot Games and want something removed, please open an issue.
+
+lolPing isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.
