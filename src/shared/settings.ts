@@ -1,3 +1,4 @@
+import { LANGUAGE_PREFS, strings, type Lang, type LanguagePref } from './i18n';
 import { HOTKEY_PRIMARY_MODS, MOD, type Hotkey, vkLabel } from './keys';
 
 export type NamedTrigger = 'alt' | 'ctrl' | 'shift' | 'win' | 'capslock' | 'mouse4' | 'mouse5';
@@ -17,6 +18,7 @@ export interface Settings {
   muted: boolean;
   tickSound: boolean;
   launchAtStartup: boolean;
+  language: LanguagePref;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -32,6 +34,7 @@ export const DEFAULT_SETTINGS: Settings = {
   muted: false,
   tickSound: true,
   launchAtStartup: false,
+  language: 'auto',
 };
 
 export const LIMITS = {
@@ -89,6 +92,7 @@ export function normalizeSettings(raw: unknown): Settings {
     muted: bool(r.muted, 'muted'),
     tickSound: bool(r.tickSound, 'tickSound'),
     launchAtStartup: bool(r.launchAtStartup, 'launchAtStartup'),
+    language: (LANGUAGE_PREFS as readonly unknown[]).includes(r.language) ? (r.language as LanguagePref) : DEFAULT_SETTINGS.language,
   };
 }
 
@@ -96,12 +100,14 @@ export function mergeSettings(current: Settings, patch: Partial<Settings>): Sett
   return normalizeSettings({ ...current, ...patch });
 }
 
-const TRIGGER_LABELS: Record<NamedTrigger, string> = {
-  alt: 'Alt', ctrl: 'Ctrl', shift: 'Shift', win: 'Win', capslock: 'Caps Lock', mouse4: 'Mouse 4', mouse5: 'Mouse 5',
+const KEY_LABELS: Record<Exclude<NamedTrigger, 'mouse4' | 'mouse5'>, string> = {
+  alt: 'Alt', ctrl: 'Ctrl', shift: 'Shift', win: 'Win', capslock: 'Caps Lock',
 };
 
-export function triggerLabel(t: TriggerKey): string {
-  return typeof t === 'object' ? vkLabel(t.vk) : TRIGGER_LABELS[t];
+export function triggerLabel(t: TriggerKey, lang: Lang = 'en'): string {
+  if (typeof t === 'object') return vkLabel(t.vk);
+  if (t === 'mouse4' || t === 'mouse5') return strings(lang)[t];
+  return KEY_LABELS[t];
 }
 
 export type OverlaySettings = Pick<Settings, 'pingSizePx' | 'pingDurationS' | 'volume' | 'muted' | 'tickSound'>;

@@ -1,5 +1,6 @@
 import { app } from 'electron';
 import { join } from 'node:path';
+import { resolveLang, strings, type Strings } from '../shared/i18n';
 import { SETTINGS_CH, type About, type AppStatus } from '../shared/ipc';
 import { hotkeyLabel } from '../shared/keys';
 import { configCommand } from '../shared/protocol';
@@ -12,12 +13,6 @@ import { registerSettingsIpc } from './settingsIpc';
 import { SettingsStore } from './settingsStore';
 import { onSettingsWindowGone, openSettingsWindow, settingsWindow } from './settingsWindow';
 import { AppTray, type TrayMode } from './tray';
-
-const LIMITATIONS = [
-  'The wheel can’t be triggered over elevated (administrator) windows such as Task Manager.',
-  'Exclusive-fullscreen games draw above the overlay.',
-  'Single-window screen capture doesn’t include the overlay; use whole-screen capture.',
-];
 
 registerAppScheme();
 app.setAppUserModelId('com.lolping.app');
@@ -33,6 +28,8 @@ function start(): void {
   if (!process.env.ELECTRON_RENDERER_URL) serveRenderer(join(__dirname, '../renderer'));
   const store = new SettingsStore(settingsDir());
   let settings = store.load();
+  // The language setting, or the Windows display language when it's 'auto'.
+  const text = (): Strings => strings(resolveLang(settings.language, app.getLocale()));
   let enabled = settings.enabledOnStart;
   let quitting = false; // read by pushStatus: once true, the tray and overlays are gone
   let capturing = false; // the settings page is listening for a key, so the helper must stay suspended
@@ -48,7 +45,7 @@ function start(): void {
     setEnabled: (on) => setEnabled(on),
     retryHelper: () => bridge.retry(),
     quit: () => app.quit(),
-  });
+  }, text());
   const pushStatus = () => {
     if (quitting) return;
     tray.set(trayMode(), enabled);
@@ -56,15 +53,16 @@ function start(): void {
   };
   const about = (): About => ({
     version: app.getVersion(),
-    problems: [...store.problems, ...[...overlays.missingAssets].map((a) => `Missing asset: ${a}`)],
-    limitations: LIMITATIONS,
+    problems: [...store.problems, ...[...overlays.missingAssets].map((a) => text().missingAsset(a))],
+    limitations: text().limitations,
   });
 
   function setEnabled(on: boolean): void {
     if (on === enabled) return;
     enabled = on;
     bridge.send(configCommand(store.get(), enabled)); // also refreshes the config re-sent after restarts
-    overlays.toast(on ? 'Pings on' : 'Pings off', `${hotkeyLabel(store.get().toggleHotkey)} to toggle`);
+    const t = text();
+    overlays.toast(on ? t.toastOn : t.toastOff, t.toastToggleHint(hotkeyLabel(store.get().toggleHotkey)));
     pushStatus();
   }
 
@@ -80,7 +78,7 @@ function start(): void {
     // A helper that is starting or has stopped can no longer send the cancel that dismisses a wheel left on screen.
     if (s !== 'running') overlays.cancelWheel();
     pushStatus();
-    if (s === 'failed') overlays.toast('Ping helper stopped', 'Right-click the tray icon to restart it');
+    if (s === 'failed') overlays.toast(text().toastHelperStopped, text().toastHelperStoppedBody);
   });
   bridge.on('log', (line: string) => console.log('[helper]', line));
 
@@ -90,6 +88,7 @@ function start(): void {
     bridge.send(configCommand(s, enabled));
     overlays.updateSettings(overlaySettings(s));
     settingsWindow()?.webContents.send(SETTINGS_CH.changed, s);
+    if (s.language !== previous.language) tray.setText(text());
     if (app.isPackaged && s.launchAtStartup !== previous.launchAtStartup) {
       app.setLoginItemSettings({ openAtLogin: s.launchAtStartup, args: ['--hidden'] });
     }
@@ -106,6 +105,7 @@ function start(): void {
       capturing = on;
       bridge.send({ type: 'suspend', on });
     },
+    text,
   });
   // The page can't report that it went away mid-capture (window closed, renderer crashed): release the suspend here.
   onSettingsWindowGone(() => {

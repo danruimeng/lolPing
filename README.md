@@ -1,6 +1,10 @@
 <h1 align="center"><img src="assets/textures/generic_ping.png" width="56" alt=""><br>lolPing</h1>
 
 <p align="center">
+  English | <a href="README.zh-CN.md">简体中文</a>
+</p>
+
+<p align="center">
   League of Legends pings for your whole Windows desktop.<br>
   Hold <b>Alt</b>, drag, and let go on a ping. The animation pops and the sound plays on top of any app, on any monitor.
 </p>
@@ -48,6 +52,7 @@ The wheel, from the top going clockwise: Danger, Push, On My Way, All In, Assist
 - **Enable / disable shortcut:** must include Ctrl, Alt or Win.
 - **Pings and sound:** size, duration, volume, mute and the wheel's tick sound, with a preview of every ping.
 - **Launch at Windows startup:** starts hidden in the tray.
+- **Language:** follows the Windows display language, or pick English or 简体中文.
 
 Settings are saved in `%APPDATA%\lolPing\settings.json`.
 

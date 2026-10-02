@@ -1,10 +1,11 @@
-import { FluentProvider, webDarkTheme, webLightTheme } from '@fluentui/react-components';
+import { Dropdown, FluentProvider, Option, webDarkTheme, webLightTheme } from '@fluentui/react-components';
 import {
   ArrowMove24Regular, CursorClick24Regular, Info24Regular, Keyboard24Regular, MusicNote224Regular, Play24Regular,
   Power24Regular, ResizeLarge24Regular, Rocket24Regular, Settings24Regular, Speaker224Regular, SpeakerMute24Regular,
-  Timer24Regular, Cursor24Regular,
+  Timer24Regular, Cursor24Regular, LocalLanguage24Regular,
 } from '@fluentui/react-icons';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { LANGUAGE_NAMES, LANGUAGE_PREFS, resolveLang, strings, type LanguagePref, type Strings } from '../../shared/i18n';
 import type { AppStatus } from '../../shared/ipc';
 import { hotkeyParts } from '../../shared/keys';
 import { textureUrl } from '../../shared/pings';
@@ -15,14 +16,15 @@ import { PreviewGrid } from './components/PreviewGrid';
 import { SettingRow, SliderRow, SwitchRow } from './components/rows';
 import { StatusCard } from './components/StatusCard';
 import { TriggerPicker } from './components/TriggerPicker';
+import { TextContext, useText } from './text';
 import { useAppState, type Update } from './useAppState';
 
-const SECTIONS: { id: string; label: string; icon: ReactNode }[] = [
-  { id: 'trigger', label: 'Trigger', icon: <Cursor24Regular /> },
-  { id: 'toggle', label: 'Toggle', icon: <Keyboard24Regular /> },
-  { id: 'pings', label: 'Pings & sound', icon: <Speaker224Regular /> },
-  { id: 'preview', label: 'Preview', icon: <Play24Regular /> },
-  { id: 'app', label: 'App', icon: <Settings24Regular /> },
+const SECTIONS: { id: string; label: (t: Strings) => string; icon: ReactNode }[] = [
+  { id: 'trigger', label: (t) => t.navTrigger, icon: <Cursor24Regular /> },
+  { id: 'toggle', label: (t) => t.navToggle, icon: <Keyboard24Regular /> },
+  { id: 'pings', label: (t) => t.navPings, icon: <Speaker224Regular /> },
+  { id: 'preview', label: (t) => t.navPreview, icon: <Play24Regular /> },
+  { id: 'app', label: (t) => t.navApp, icon: <Settings24Regular /> },
 ];
 
 function useDarkMode(): boolean {
@@ -42,16 +44,24 @@ export function App() {
   const { settings, status, update } = useAppState();
   return (
     <FluentProvider theme={dark ? webDarkTheme : webLightTheme} style={{ background: 'transparent', height: '100%' }}>
-      {settings && status ? <SettingsPage settings={settings} status={status} update={update} /> : null}
+      {settings && status ? (
+        <TextContext.Provider value={strings(resolveLang(settings.language, navigator.language))}>
+          <SettingsPage settings={settings} status={status} update={update} />
+        </TextContext.Provider>
+      ) : null}
     </FluentProvider>
   );
 }
 
 function SettingsPage({ settings: s, status, update }: { settings: Settings; status: AppStatus; update: Update }) {
+  const t = useText();
+  useEffect(() => {
+    document.documentElement.lang = t.lang; // picks the right CJK glyphs
+  }, [t]);
   const mainRef = useRef<HTMLElement>(null);
   const [active, setActive] = useState(SECTIONS[0].id);
   const off = !status.enabled || status.helper === 'failed';
-  const trigger = triggerLabel(s.trigger);
+  const trigger = triggerLabel(s.trigger, t.lang);
   const [hotkeyError, setHotkeyError] = useState<string | null>(null);
   const mouseTrigger = s.trigger === 'mouse4' || s.trigger === 'mouse5';
   const customTrigger = typeof s.trigger === 'object';
@@ -78,38 +88,38 @@ function SettingsPage({ settings: s, status, update }: { settings: Settings; sta
           <img src={textureUrl('pingwheel_basicpingrender')} alt="" />
           <div>
             <b>lolPing</b>
-            <span className="desc">Ping anywhere</span>
+            <span className="desc">{t.tagline}</span>
           </div>
         </div>
         {SECTIONS.map((sec) => (
           <button key={sec.id} className={`navItem${active === sec.id ? ' sel' : ''}`} onClick={() => document.getElementById(sec.id)?.scrollIntoView({ behavior: 'smooth' })}>
             {sec.icon}
-            {sec.label}
+            {sec.label(t)}
           </button>
         ))}
       </nav>
       <main className="content" ref={mainRef} onScroll={onScroll}>
-        <h1 className="pageTitle">Settings</h1>
+        <h1 className="pageTitle">{t.pageTitle}</h1>
         <StatusCard settings={s} status={status} />
 
-        <div className="section" id="trigger">Trigger</div>
-        <SettingRow icon={<Cursor24Regular />} title="Trigger key" dim={off}
+        <div className="section" id="trigger">{t.navTrigger}</div>
+        <SettingRow icon={<Cursor24Regular />} title={t.triggerKey} dim={off}
           description={(
             <>
-              {mouseTrigger ? 'Press and drag with this mouse button to open the wheel' : 'Hold this, then drag with the left mouse button to open the wheel'}
-              {customTrigger ? <span className="desc">This key won’t type in other apps while lolPing is on</span> : null}
+              {mouseTrigger ? t.triggerMouseDesc : t.triggerKeyDesc}
+              {customTrigger ? <span className="desc">{t.customKeyNote}</span> : null}
             </>
           )}>
           <TriggerPicker value={s.trigger} onChange={(t) => void update({ trigger: t })} />
         </SettingRow>
-        <SliderRow limit="dragThresholdPx" icon={<ArrowMove24Regular />} title="Drag distance" description="How far the mouse must move before the wheel opens"
+        <SliderRow limit="dragThresholdPx" icon={<ArrowMove24Regular />} title={t.dragDistance} description={t.dragDistanceDesc}
           value={s.dragThresholdPx} format={(v) => `${v} px`} onChange={(v) => void update({ dragThresholdPx: v })} dim={off} />
-        <SwitchRow icon={<CursorClick24Regular />} title={`${trigger} + click places a generic ping`}
-          description={`When off, ${trigger} + click passes straight through to the app underneath`}
+        <SwitchRow icon={<CursorClick24Regular />} title={t.clickPing(trigger)}
+          description={t.clickPingDesc(trigger)}
           checked={s.clickPing} onChange={(v) => void update({ clickPing: v })} dim={off} />
 
-        <div className="section" id="toggle">Toggle</div>
-        <SettingRow icon={<Keyboard24Regular />} title="Enable / disable shortcut" description="Works anywhere, even while pinging is off">
+        <div className="section" id="toggle">{t.navToggle}</div>
+        <SettingRow icon={<Keyboard24Regular />} title={t.toggleShortcut} description={t.toggleShortcutDesc}>
           <KeyCapture
             parts={hotkeyParts(s.toggleHotkey)}
             requireModifier
@@ -120,26 +130,40 @@ function SettingsPage({ settings: s, status, update }: { settings: Settings; sta
             }}
           />
         </SettingRow>
-        <SwitchRow icon={<Power24Regular />} title="Start enabled" description="Pinging is on when lolPing launches"
+        <SwitchRow icon={<Power24Regular />} title={t.startEnabled} description={t.startEnabledDesc}
           checked={s.enabledOnStart} onChange={(v) => void update({ enabledOnStart: v })} />
 
-        <div className="section" id="pings">Pings &amp; sound</div>
-        <SliderRow limit="pingSizePx" icon={<ResizeLarge24Regular />} title="Ping size" value={s.pingSizePx}
+        <div className="section" id="pings">{t.navPings}</div>
+        <SliderRow limit="pingSizePx" icon={<ResizeLarge24Regular />} title={t.pingSize} value={s.pingSizePx}
           format={(v) => `${v} px`} onChange={(v) => void update({ pingSizePx: v })} />
-        <SliderRow limit="pingDurationS" icon={<Timer24Regular />} title="Ping duration" description="How long a ping stays on screen"
+        <SliderRow limit="pingDurationS" icon={<Timer24Regular />} title={t.pingDuration} description={t.pingDurationDesc}
           value={s.pingDurationS} format={(v) => `${v.toFixed(1)} s`} onChange={(v) => void update({ pingDurationS: v })} />
-        <SliderRow limit="volume" icon={<Speaker224Regular />} title="Volume" value={s.volume}
+        <SliderRow limit="volume" icon={<Speaker224Regular />} title={t.volume} value={s.volume}
           format={(v) => `${v}`} onChange={(v) => void update({ volume: v })} dim={s.muted} />
-        <SwitchRow icon={<SpeakerMute24Regular />} title="Mute ping sounds" checked={s.muted} onChange={(v) => void update({ muted: v })} />
-        <SwitchRow icon={<MusicNote224Regular />} title="Wheel tick sound" description="Plays a quiet click when hovering a new slice"
+        <SwitchRow icon={<SpeakerMute24Regular />} title={t.mute} checked={s.muted} onChange={(v) => void update({ muted: v })} />
+        <SwitchRow icon={<MusicNote224Regular />} title={t.tickSound} description={t.tickSoundDesc}
           checked={s.tickSound} onChange={(v) => void update({ tickSound: v })} />
 
-        <div className="section" id="preview">Preview</div>
+        <div className="section" id="preview">{t.navPreview}</div>
         <PreviewGrid />
 
-        <div className="section" id="app">App</div>
-        <SwitchRow icon={<Rocket24Regular />} title="Launch at Windows startup" description="Starts hidden in the tray"
+        <div className="section" id="app">{t.navApp}</div>
+        <SwitchRow icon={<Rocket24Regular />} title={t.launchAtStartup} description={t.launchAtStartupDesc}
           checked={s.launchAtStartup} onChange={(v) => void update({ launchAtStartup: v })} />
+        <SettingRow icon={<LocalLanguage24Regular />} title={t.language} description={t.languageDesc}>
+          <Dropdown
+            style={{ minWidth: 170 }}
+            value={s.language === 'auto' ? t.languageAuto : LANGUAGE_NAMES[s.language]}
+            selectedOptions={[s.language]}
+            onOptionSelect={(_, d) => void update({ language: d.optionValue as LanguagePref })}
+          >
+            {LANGUAGE_PREFS.map((pref) => (
+              <Option key={pref} value={pref} text={pref === 'auto' ? t.languageAuto : LANGUAGE_NAMES[pref]}>
+                {pref === 'auto' ? t.languageAuto : LANGUAGE_NAMES[pref]}
+              </Option>
+            ))}
+          </Dropdown>
+        </SettingRow>
         <AboutSection icon={<Info24Regular />} />
       </main>
     </div>

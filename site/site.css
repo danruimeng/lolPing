@@ -214,7 +214,7 @@ section + section {
     radial-gradient(60% 85% at 12% 100%, rgba(200, 170, 110, 0.24), transparent 60%),
     radial-gradient(35% 50% at 45% 55%, rgba(46, 139, 255, 0.16), transparent 70%),
     linear-gradient(160deg, #0c2a4d 0%, #071629 52%, #030b16 100%);
-  font: 13px/1.45 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif;
+  font: 13px/1.45 'Segoe UI Variable Text', 'Segoe UI', 'Microsoft YaHei UI', system-ui, sans-serif;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;

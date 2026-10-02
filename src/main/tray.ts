@@ -1,4 +1,5 @@
 import { Menu, Tray, nativeImage, type MenuItemConstructorOptions, type NativeImage } from 'electron';
+import { strings, type Strings } from '../shared/i18n';
 
 export type TrayMode = 'on' | 'off' | 'failed';
 
@@ -30,7 +31,7 @@ export class AppTray {
   private enabled = true;
   private destroyed = false;
 
-  constructor(iconPath: string, private readonly handlers: TrayHandlers) {
+  constructor(iconPath: string, private readonly handlers: TrayHandlers, private text: Strings = strings('en')) {
     const base = nativeImage.createFromPath(iconPath).resize({ width: 32, height: 32, quality: 'best' });
     this.icons = {
       on: base,
@@ -55,6 +56,13 @@ export class AppTray {
     this.render();
   }
 
+  /** Switches the tooltip and menu to another language. */
+  setText(text: Strings): void {
+    if (this.destroyed) return;
+    this.text = text;
+    this.render();
+  }
+
   /** Idempotent. */
   destroy(): void {
     if (this.destroyed) return;
@@ -65,15 +73,16 @@ export class AppTray {
   private render(): void {
     const failed = this.mode === 'failed';
     this.tray.setImage(this.icons[this.mode]);
-    this.tray.setToolTip(failed ? 'lolPing: input helper stopped' : `lolPing: pings ${this.enabled ? 'on' : 'off'}`);
+    const t = this.text;
+    this.tray.setToolTip(failed ? t.trayTipFailed : t.trayTip(this.enabled));
     const items: MenuItemConstructorOptions[] = [
-      { label: 'Enabled', type: 'checkbox', checked: this.enabled, enabled: !failed, click: (item) => this.handlers.setEnabled(item.checked) },
+      { label: t.trayEnabled, type: 'checkbox', checked: this.enabled, enabled: !failed, click: (item) => this.handlers.setEnabled(item.checked) },
     ];
-    if (failed) items.push({ label: 'Restart input helper', click: () => this.handlers.retryHelper() });
+    if (failed) items.push({ label: t.trayRestart, click: () => this.handlers.retryHelper() });
     items.push(
       { type: 'separator' },
-      { label: 'Settings…', click: () => this.handlers.openSettings() },
-      { label: 'Quit lolPing', click: () => this.handlers.quit() },
+      { label: t.traySettings, click: () => this.handlers.openSettings() },
+      { label: t.trayQuit, click: () => this.handlers.quit() },
     );
     this.tray.setContextMenu(Menu.buildFromTemplate(items));
   }

@@ -1,6 +1,7 @@
 import { Slider, Switch } from '@fluentui/react-components';
 import type { ReactNode } from 'react';
 import { LIMITS } from '../../../shared/settings';
+import { useText } from '../text';
 
 export function SettingRow(props: { icon: ReactNode; title: ReactNode; description?: ReactNode; dim?: boolean; children: ReactNode }) {
   return (
@@ -16,9 +17,10 @@ export function SettingRow(props: { icon: ReactNode; title: ReactNode; descripti
 }
 
 export function SwitchRow(props: { icon: ReactNode; title: ReactNode; description?: ReactNode; checked: boolean; onChange(v: boolean): void; dim?: boolean }) {
+  const t = useText();
   return (
     <SettingRow icon={props.icon} title={props.title} description={props.description} dim={props.dim}>
-      <Switch checked={props.checked} onChange={(_, d) => props.onChange(d.checked)} label={props.checked ? 'On' : 'Off'} labelPosition="before" />
+      <Switch checked={props.checked} onChange={(_, d) => props.onChange(d.checked)} label={props.checked ? t.on : t.off} labelPosition="before" />
     </SettingRow>
   );
 }

@@ -3,6 +3,7 @@ import { EditRegular } from '@fluentui/react-icons';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { api } from '../api';
 import { evaluateKeyDown } from '../keyCaptureLogic';
+import { useText } from '../text';
 
 export interface Captured {
   mods: number;
@@ -25,6 +26,7 @@ export function KeyCapture(props: {
   autoListen?: boolean;
   onCancel?(): void;
 }) {
+  const t = useText();
   const [listening, setListening] = useState(props.autoListen === true);
   const [hint, setHint] = useState<string | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -60,7 +62,7 @@ export function KeyCapture(props: {
       case 'cancel':
         return finish(true);
       case 'hint':
-        return setHint(outcome.hint);
+        return setHint(t[outcome.hint]);
       case 'capture':
         finish(false);
         return props.onCapture({ mods: outcome.mods, vk: outcome.vk });
@@ -87,7 +89,7 @@ export function KeyCapture(props: {
         }}
       >
         {listening ? (
-          <span className="desc">{hint ?? 'Press a key…'}</span>
+          <span className="desc">{hint ?? t.pressKey}</span>
         ) : (
           <span className="keys">{props.parts.map((p) => <kbd key={p}>{p}</kbd>)}</span>
         )}

@@ -22,19 +22,19 @@ export interface CaptureRules {
 export type CaptureOutcome =
   | { kind: 'ignore' }
   | { kind: 'cancel' }
-  | { kind: 'hint'; hint: string }
+  | { kind: 'hint'; hint: 'hintUnusable' | 'hintNotTrigger' | 'hintNeedModifier' }
   | { kind: 'capture'; mods: number; vk: number };
 
-/** Decides what a key press means while a KeyCapture is listening. */
+/** Decides what a key press means while a KeyCapture is listening. Hints are keys into the i18n strings. */
 export function evaluateKeyDown(e: KeyDownLike, rules: CaptureRules): CaptureOutcome {
   // Auto-repeat of a key held down before listening started (e.g. Enter that chose "Custom key…") is not a choice.
   if (e.repeat) return { kind: 'ignore' };
   if (e.code === 'Escape') return { kind: 'cancel' };
   if (MODIFIER_CODES.has(e.code)) return { kind: 'ignore' };
   const vk = codeToVk(e.code);
-  if (vk === null) return { kind: 'hint', hint: 'That key can’t be used' };
-  if (rules.forbiddenVks?.includes(vk)) return { kind: 'hint', hint: 'That key can’t be used as a trigger' };
+  if (vk === null) return { kind: 'hint', hint: 'hintUnusable' };
+  if (rules.forbiddenVks?.includes(vk)) return { kind: 'hint', hint: 'hintNotTrigger' };
   const mods = rules.requireModifier ? eventMods(e) : 0;
-  if (rules.requireModifier && (mods & HOTKEY_PRIMARY_MODS) === 0) return { kind: 'hint', hint: 'Add Ctrl, Alt or Win' };
+  if (rules.requireModifier && (mods & HOTKEY_PRIMARY_MODS) === 0) return { kind: 'hint', hint: 'hintNeedModifier' };
   return { kind: 'capture', mods, vk };
 }

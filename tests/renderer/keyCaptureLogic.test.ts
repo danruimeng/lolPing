@@ -30,7 +30,7 @@ describe('evaluateKeyDown: Escape and modifiers', () => {
   });
 
   it('hints on keys that have no virtual-key mapping', () => {
-    expect(evaluateKeyDown(press('LaunchMail', { ctrlKey: true }), toggle)).toEqual({ kind: 'hint', hint: 'That key can’t be used' });
+    expect(evaluateKeyDown(press('LaunchMail', { ctrlKey: true }), toggle)).toEqual({ kind: 'hint', hint: 'hintUnusable' });
   });
 });
 
@@ -44,11 +44,11 @@ describe('evaluateKeyDown: toggle hotkey (requireModifier)', () => {
   });
 
   it('rejects a bare key', () => {
-    expect(evaluateKeyDown(press('KeyA'), toggle)).toEqual({ kind: 'hint', hint: 'Add Ctrl, Alt or Win' });
+    expect(evaluateKeyDown(press('KeyA'), toggle)).toEqual({ kind: 'hint', hint: 'hintNeedModifier' });
   });
 
   it('rejects Shift as the only modifier', () => {
-    expect(evaluateKeyDown(press('KeyA', { shiftKey: true }), toggle)).toEqual({ kind: 'hint', hint: 'Add Ctrl, Alt or Win' });
+    expect(evaluateKeyDown(press('KeyA', { shiftKey: true }), toggle)).toEqual({ kind: 'hint', hint: 'hintNeedModifier' });
   });
 
   it('is not affected by the custom-trigger key list', () => {
@@ -65,12 +65,12 @@ describe('evaluateKeyDown: custom trigger (forbiddenVks)', () => {
 
   it('rejects Enter, Tab, Backspace, Space and the arrow keys', () => {
     for (const code of ['Enter', 'Tab', 'Backspace', 'Space', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown']) {
-      expect(evaluateKeyDown(press(code), trigger)).toEqual({ kind: 'hint', hint: 'That key can’t be used as a trigger' });
+      expect(evaluateKeyDown(press(code), trigger)).toEqual({ kind: 'hint', hint: 'hintNotTrigger' });
     }
   });
 
   it('rejects them even with a modifier held', () => {
-    expect(evaluateKeyDown(press('Enter', { shiftKey: true }), trigger)).toEqual({ kind: 'hint', hint: 'That key can’t be used as a trigger' });
+    expect(evaluateKeyDown(press('Enter', { shiftKey: true }), trigger)).toEqual({ kind: 'hint', hint: 'hintNotTrigger' });
   });
 
   it('applies no extra restriction when no list is given', () => {

@@ -1,5 +1,6 @@
 // Renders the README and link-preview media from the built demo page (site/):
-//   docs/media/demo.gif  Enemy Missing pings on a "not responding" dialog
+//   docs/media/demo.gif        Enemy Missing pings on a "not responding" dialog
+//   docs/media/demo.zh-CN.gif  the same scene in Chinese, for README.zh-CN.md
 //   docs/media/og.png    1200×630 still for link previews (Discord, X, GitHub social preview)
 //
 // Run `npm run media` (it builds the site first). Needs ffmpeg on PATH.
@@ -40,7 +41,7 @@ async function open(url, width, height) {
   return win;
 }
 
-async function recordGif(url) {
+async function recordGif(url, file) {
   const win = await open(url, 1600, 900);
   const dir = mkdtempSync(join(tmpdir(), 'lolping-frames-'));
   const frames = [];
@@ -60,9 +61,9 @@ async function recordGif(url) {
   const filter =
     'fps=20,split[a][b];' +
     '[a]palettegen=max_colors=256:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle';
-  execFileSync('ffmpeg', ['-y', '-v', 'error', '-f', 'concat', '-safe', '0', '-i', join(dir, 'list.txt'), '-vf', filter, '-loop', '0', join(OUT, 'demo.gif')]);
+  execFileSync('ffmpeg', ['-y', '-v', 'error', '-f', 'concat', '-safe', '0', '-i', join(dir, 'list.txt'), '-vf', filter, '-loop', '0', join(OUT, file)]);
   rmSync(dir, { recursive: true, force: true });
-  console.log(`demo.gif: ${frames.length} frames`);
+  console.log(`${file}: ${frames.length} frames`);
 }
 
 async function stillOg(url) {
@@ -82,7 +83,8 @@ app.whenReady().then(async () => {
     mkdirSync(OUT, { recursive: true });
     const server = await serve();
     const url = `http://127.0.0.1:${server.address().port}/?capture=hung`;
-    await recordGif(url);
+    await recordGif(url, 'demo.gif');
+    await recordGif(`${url}&lang=zh`, 'demo.zh-CN.gif');
     await stillOg(url);
     server.close();
     app.exit(0);

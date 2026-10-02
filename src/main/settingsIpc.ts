@@ -1,4 +1,5 @@
 import { globalShortcut, ipcMain, shell } from 'electron';
+import type { Strings } from '../shared/i18n';
 import { SETTINGS_CH, type About, type AppStatus, type SetSettingsResult } from '../shared/ipc';
 import { hotkeyLabel, hotkeyToAccelerator, type Hotkey } from '../shared/keys';
 import { pingById, type PingId } from '../shared/pings';
@@ -15,17 +16,19 @@ export interface SettingsIpcDeps {
   about(): About;
   retryHelper(): void;
   setCapturing(on: boolean): void;
+  /** Strings in the app's current language. */
+  text(): Strings;
 }
 
 /** Returns an error message when another app already owns this shortcut. */
-function hotkeyConflict(next: Hotkey, current: Hotkey): string | null {
+function hotkeyConflict(next: Hotkey, current: Hotkey, text: Strings): string | null {
   if (next.mods === current.mods && next.vk === current.vk) return null;
   const accelerator = hotkeyToAccelerator(next);
   if (!accelerator) return null;
   try {
     const free = globalShortcut.register(accelerator, () => undefined);
     if (free) globalShortcut.unregister(accelerator);
-    return free ? null : `${hotkeyLabel(next)} is already used by another app.`;
+    return free ? null : text.hotkeyTaken(hotkeyLabel(next));
   } catch {
     return null;
   }
@@ -35,7 +38,7 @@ export function registerSettingsIpc(d: SettingsIpcDeps): void {
   ipcMain.handle(SETTINGS_CH.get, () => d.store.get());
   ipcMain.handle(SETTINGS_CH.set, (_e, patch: Partial<Settings>): SetSettingsResult => {
     if (patch.toggleHotkey) {
-      const error = hotkeyConflict(patch.toggleHotkey, d.store.get().toggleHotkey);
+      const error = hotkeyConflict(patch.toggleHotkey, d.store.get().toggleHotkey, d.text());
       if (error) return { ok: false, error, settings: d.store.get() };
     }
     return { ok: true, settings: d.store.update(patch) };

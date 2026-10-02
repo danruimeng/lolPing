@@ -87,6 +87,11 @@ export function startPage(): void {
   const capture = new URLSearchParams(location.search).get('capture');
   if (capture !== null) {
     const hung = capture === 'hung';
+    // &lang=zh swaps the scene's text for the Chinese README's GIF.
+    if (new URLSearchParams(location.search).get('lang') === 'zh') {
+      document.documentElement.lang = 'zh-CN';
+      for (const el of document.querySelectorAll<HTMLElement>('[data-zh]')) el.textContent = el.dataset.zh ?? '';
+    }
     document.body.classList.add('capture');
     document.body.classList.toggle('scene-hung', hung);
     (window as unknown as { lolpingDemo: object }).lolpingDemo = {

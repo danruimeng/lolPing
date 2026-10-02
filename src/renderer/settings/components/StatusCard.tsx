@@ -3,13 +3,15 @@ import type { AppStatus } from '../../../shared/ipc';
 import { hotkeyLabel } from '../../../shared/keys';
 import { triggerLabel, type Settings } from '../../../shared/settings';
 import { api } from '../api';
+import { useText } from '../text';
 
 export function StatusCard({ settings, status }: { settings: Settings; status: AppStatus }) {
+  const t = useText();
   const failed = status.helper === 'failed';
-  const title = failed ? 'Input helper stopped' : status.enabled ? 'Pinging is on' : 'Pinging is off';
+  const title = failed ? t.statusHelperStopped : status.enabled ? t.statusOn : t.statusOff;
   const hint = failed
-    ? 'Mouse and keyboard input can’t be read right now.'
-    : `Hold ${triggerLabel(settings.trigger)} and drag to open the ping wheel · ${hotkeyLabel(settings.toggleHotkey)} to turn ${status.enabled ? 'off' : 'on'}`;
+    ? t.statusFailedHint
+    : t.statusHint(triggerLabel(settings.trigger, t.lang), hotkeyLabel(settings.toggleHotkey), status.enabled);
   return (
     <div className="card status">
       <div className={`dot${failed ? ' failed' : status.enabled ? '' : ' off'}`} />
@@ -19,9 +21,9 @@ export function StatusCard({ settings, status }: { settings: Settings; status: A
       </div>
       <div className="ctl">
         {failed ? (
-          <Button appearance="primary" onClick={() => void api.retryHelper()}>Restart helper</Button>
+          <Button appearance="primary" onClick={() => void api.retryHelper()}>{t.restartHelper}</Button>
         ) : (
-          <Switch checked={status.enabled} onChange={(_, d) => void api.setEnabled(d.checked)} label={status.enabled ? 'On' : 'Off'} labelPosition="before" />
+          <Switch checked={status.enabled} onChange={(_, d) => void api.setEnabled(d.checked)} label={status.enabled ? t.on : t.off} labelPosition="before" />
         )}
       </div>
     </div>
