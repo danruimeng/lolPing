@@ -1,7 +1,13 @@
 import { Menu, Tray, nativeImage, type MenuItemConstructorOptions, type NativeImage } from 'electron';
 import { strings, type Strings } from '../shared/i18n';
 
-export type TrayMode = 'on' | 'off' | 'failed';
+export type TrayMode = 'on' | 'off' | 'failed' | 'noAccess';
+
+/** macOS menu bar icons: black template images (with @2x files next to them) that macOS tints for the menu bar. */
+export interface MacTrayIcons {
+  on: string;
+  off: string;
+}
 
 export interface TrayHandlers {
   openSettings(): void;
@@ -26,25 +32,42 @@ function recolor(base: NativeImage, fn: (r: number, g: number, b: number, a: num
 
 export class AppTray {
   private readonly tray: Tray;
-  private readonly icons: Record<TrayMode, NativeImage>;
+  private readonly icons: Record<Exclude<TrayMode, 'noAccess'>, NativeImage>;
   private mode: TrayMode = 'on';
   private enabled = true;
   private destroyed = false;
 
-  constructor(iconPath: string, private readonly handlers: TrayHandlers, private text: Strings = strings('en')) {
-    const base = nativeImage.createFromPath(iconPath).resize({ width: 32, height: 32, quality: 'best' });
-    this.icons = {
-      on: base,
-      // grey and half transparent (scale every channel: the bitmap is premultiplied)
-      off: recolor(base, (r, g, b, a) => {
-        const l = Math.round((0.3 * r + 0.59 * g + 0.11 * b) * 0.5);
-        return [l, l, l, Math.round(a * 0.5)];
-      }),
-      // solid orange silhouette = warning
-      failed: recolor(base, (_r, _g, _b, a) => [a, Math.round(a * 0.55), Math.round(a * 0.15), a]),
-    };
+  /** `mac` switches to menu bar behaviour: template icons, and a click opens the menu (which has Settings…). */
+  constructor(
+    iconPath: string,
+    private readonly handlers: TrayHandlers,
+    private text: Strings = strings('en'),
+    mac?: MacTrayIcons,
+  ) {
+    const size = mac ? 18 : 32;
+    const base = nativeImage.createFromPath(iconPath).resize({ width: size, height: size, quality: 'best' });
+    // solid orange silhouette = warning (in colour on macOS too, so it stands out in the menu bar)
+    const failed = recolor(base, (_r, _g, _b, a) => [a, Math.round(a * 0.55), Math.round(a * 0.15), a]);
+    if (mac) {
+      const template = (file: string): NativeImage => {
+        const img = nativeImage.createFromPath(file);
+        img.setTemplateImage(true);
+        return img;
+      };
+      this.icons = { on: template(mac.on), off: template(mac.off), failed };
+    } else {
+      this.icons = {
+        on: base,
+        // grey and half transparent (scale every channel: the bitmap is premultiplied)
+        off: recolor(base, (r, g, b, a) => {
+          const l = Math.round((0.3 * r + 0.59 * g + 0.11 * b) * 0.5);
+          return [l, l, l, Math.round(a * 0.5)];
+        }),
+        failed,
+      };
+    }
     this.tray = new Tray(this.icons.on);
-    this.tray.on('click', () => handlers.openSettings());
+    if (!mac) this.tray.on('click', () => handlers.openSettings());
     this.render();
   }
 
@@ -72,11 +95,15 @@ export class AppTray {
 
   private render(): void {
     const failed = this.mode === 'failed';
-    this.tray.setImage(this.icons[this.mode]);
+    const noAccess = this.mode === 'noAccess';
+    this.tray.setImage(this.icons[this.mode === 'noAccess' ? 'failed' : this.mode]);
     const t = this.text;
-    this.tray.setToolTip(failed ? t.trayTipFailed : t.trayTip(this.enabled));
+    this.tray.setToolTip(failed ? t.trayTipFailed : noAccess ? t.trayTipNoAccess : t.trayTip(this.enabled));
     const items: MenuItemConstructorOptions[] = [
-      { label: t.trayEnabled, type: 'checkbox', checked: this.enabled, enabled: !failed, click: (item) => this.handlers.setEnabled(item.checked) },
+      {
+        label: t.trayEnabled, type: 'checkbox', checked: this.enabled, enabled: !failed && !noAccess,
+        click: (item) => this.handlers.setEnabled(item.checked),
+      },
     ];
     if (failed) items.push({ label: t.trayRestart, click: () => this.handlers.retryHelper() });
     items.push(

@@ -2,6 +2,7 @@ import { EventEmitter } from 'node:events';
 import { copyFileSync, existsSync, readFileSync } from 'node:fs';
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import type { Platform } from '../shared/platform';
 import { mergeSettings, normalizeSettings, type Settings } from '../shared/settings';
 
 /** Windows can briefly lock the target (antivirus, indexer), failing rename with one of these codes. */
@@ -26,22 +27,26 @@ async function renameWithRetry(from: string, to: string): Promise<void> {
 export class SettingsStore extends EventEmitter {
   readonly file: string;
   readonly problems: string[] = [];
-  private current: Settings = normalizeSettings(undefined);
+  /** True when load() found no settings file: lolPing's first run. */
+  firstRun = false;
+  private current: Settings;
   private timer: NodeJS.Timeout | null = null;
   private writing: Promise<void> = Promise.resolve();
 
-  constructor(readonly dir: string, private readonly debounceMs = 300) {
+  constructor(readonly dir: string, private readonly debounceMs = 300, private readonly platform: Platform = 'win') {
     super();
     this.file = join(dir, 'settings.json');
+    this.current = normalizeSettings(undefined, platform);
   }
 
   load(): Settings {
-    if (!existsSync(this.file)) {
-      this.current = normalizeSettings(undefined);
+    this.firstRun = !existsSync(this.file);
+    if (this.firstRun) {
+      this.current = normalizeSettings(undefined, this.platform);
       return this.current;
     }
     try {
-      this.current = normalizeSettings(JSON.parse(readFileSync(this.file, 'utf8')));
+      this.current = normalizeSettings(JSON.parse(readFileSync(this.file, 'utf8')), this.platform);
     } catch (err) {
       let backup = 'it was backed up to settings.bak.json';
       try {
@@ -50,7 +55,7 @@ export class SettingsStore extends EventEmitter {
         backup = `it could not be backed up to settings.bak.json (${(copyErr as Error).message})`;
       }
       this.problems.push(`settings.json could not be read (${(err as Error).message}); ${backup} and defaults were restored.`);
-      this.current = normalizeSettings(undefined);
+      this.current = normalizeSettings(undefined, this.platform);
     }
     return this.current;
   }
@@ -60,7 +65,7 @@ export class SettingsStore extends EventEmitter {
   }
 
   update(patch: Partial<Settings>): Settings {
-    this.current = mergeSettings(this.current, patch);
+    this.current = mergeSettings(this.current, patch, this.platform);
     this.emit('change', this.current);
     this.scheduleSave();
     return this.current;

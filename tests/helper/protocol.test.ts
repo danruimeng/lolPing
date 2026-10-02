@@ -6,7 +6,7 @@ import { createInterface } from 'node:readline';
 import { describe, expect, it } from 'vitest';
 import { parseHelperLine, type HelperEvent } from '../../src/shared/protocol';
 
-const exe = resolve(__dirname, '../../native/hook-helper/build/hook-helper.exe');
+const exe = resolve(__dirname, '../../native/hook-helper/build', process.platform === 'win32' ? 'hook-helper.exe' : 'hook-helper');
 const ALT = 164, CTRL = 162, KEY_P = 80;
 const config = { type: 'config', trigger: 'alt', triggerVk: 0, clickPing: false, dragThresholdPx: 8, toggleMods: 3, toggleVk: 80, enabled: true };
 

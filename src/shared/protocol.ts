@@ -1,15 +1,22 @@
 import type { Settings } from './settings';
 
-/** Messages hook-helper.exe writes to stdout, one JSON object per line. Coordinates are physical pixels. */
+/**
+ * Messages the hook helper writes to stdout, one JSON object per line.
+ * Coordinates are physical pixels on Windows and global points (Electron DIPs) on macOS.
+ */
 export type HelperEvent =
   | { type: 'ready'; version: number }
   | { type: 'wheelOpen' | 'wheelMove' | 'wheelRelease' | 'click'; x: number; y: number }
   | { type: 'cancel' }
   | { type: 'toggled'; enabled: boolean }
-  | { type: 'error'; message: string }
+  | { type: 'error'; message: string; code?: string }
   | { type: 'sim'; swallow: boolean; inject: string };
 
-export type HelperStatus = 'starting' | 'running' | 'failed';
+/** `noAccess`: macOS hasn't given lolPing Accessibility access, so the helper can't run. */
+export type HelperStatus = 'starting' | 'running' | 'failed' | 'noAccess';
+
+/** The helper's exit code when it can't create its event tap (macOS Accessibility access missing). */
+export const HELPER_EXIT_NO_ACCESS = 3;
 
 type PointType = 'wheelOpen' | 'wheelMove' | 'wheelRelease' | 'click';
 const POINT_TYPES = new Set<string>(['wheelOpen', 'wheelMove', 'wheelRelease', 'click']);
@@ -32,7 +39,8 @@ export function parseHelperLine(line: string): HelperEvent | null {
     case 'toggled':
       return typeof o.enabled === 'boolean' ? { type: 'toggled', enabled: o.enabled } : null;
     case 'error':
-      return typeof o.message === 'string' ? { type: 'error', message: o.message } : null;
+      if (typeof o.message !== 'string') return null;
+      return typeof o.code === 'string' ? { type: 'error', message: o.message, code: o.code } : { type: 'error', message: o.message };
     case 'sim':
       return typeof o.swallow === 'boolean' && typeof o.inject === 'string'
         ? { type: 'sim', swallow: o.swallow, inject: o.inject }

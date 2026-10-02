@@ -12,4 +12,5 @@ export const SETTINGS_CH = {
   openProject: 'app:openProjectPage',
   retryHelper: 'app:retryHelper',
   capture: 'app:capture',
+  openAccessibility: 'app:openAccessibility',
 } as const;

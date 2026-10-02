@@ -10,14 +10,22 @@ import type { AppStatus } from '../../shared/ipc';
 import { hotkeyParts } from '../../shared/keys';
 import { textureUrl } from '../../shared/pings';
 import { triggerLabel, type Settings } from '../../shared/settings';
+import { api } from './api';
 import { AboutSection } from './components/AboutSection';
 import { KeyCapture } from './components/KeyCapture';
+import { PermissionCard } from './components/PermissionCard';
 import { PreviewGrid } from './components/PreviewGrid';
 import { SettingRow, SliderRow, SwitchRow } from './components/rows';
 import { StatusCard } from './components/StatusCard';
 import { TriggerPicker } from './components/TriggerPicker';
 import { TextContext, useText } from './text';
+import { macDarkTheme, macLightTheme } from './macTheme';
 import { useAppState, type Update } from './useAppState';
+
+const PLATFORM = api.platform;
+const MAC = PLATFORM === 'mac';
+/** macOS measures the screen in points. */
+const LENGTH_UNIT = MAC ? 'pt' : 'px';
 
 const SECTIONS: { id: string; label: (t: Strings) => string; icon: ReactNode }[] = [
   { id: 'trigger', label: (t) => t.navTrigger, icon: <Cursor24Regular /> },
@@ -42,10 +50,14 @@ function useDarkMode(): boolean {
 export function App() {
   const dark = useDarkMode();
   const { settings, status, update } = useAppState();
+  useEffect(() => {
+    document.documentElement.dataset.platform = PLATFORM; // mac.css restyles the page for macOS
+  }, []);
+  const theme = MAC ? (dark ? macDarkTheme : macLightTheme) : dark ? webDarkTheme : webLightTheme;
   return (
-    <FluentProvider theme={dark ? webDarkTheme : webLightTheme} style={{ background: 'transparent', height: '100%' }}>
+    <FluentProvider theme={theme} style={{ background: 'transparent', height: '100%' }}>
       {settings && status ? (
-        <TextContext.Provider value={strings(resolveLang(settings.language, navigator.language))}>
+        <TextContext.Provider value={strings(resolveLang(settings.language, navigator.language), PLATFORM)}>
           <SettingsPage settings={settings} status={status} update={update} />
         </TextContext.Provider>
       ) : null}
@@ -61,7 +73,7 @@ function SettingsPage({ settings: s, status, update }: { settings: Settings; sta
   const mainRef = useRef<HTMLElement>(null);
   const [active, setActive] = useState(SECTIONS[0].id);
   const off = !status.enabled || status.helper === 'failed';
-  const trigger = triggerLabel(s.trigger, t.lang);
+  const trigger = triggerLabel(s.trigger, t.lang, PLATFORM);
   const [hotkeyError, setHotkeyError] = useState<string | null>(null);
   const mouseTrigger = s.trigger === 'mouse4' || s.trigger === 'mouse5';
   const customTrigger = typeof s.trigger === 'object';
@@ -100,6 +112,7 @@ function SettingsPage({ settings: s, status, update }: { settings: Settings; sta
       </nav>
       <main className="content" ref={mainRef} onScroll={onScroll}>
         <h1 className="pageTitle">{t.pageTitle}</h1>
+        {status.helper === 'noAccess' ? <PermissionCard stale={status.staleAccess === true} /> : null}
         <StatusCard settings={s} status={status} />
 
         <div className="section" id="trigger">{t.navTrigger}</div>
@@ -113,7 +126,7 @@ function SettingsPage({ settings: s, status, update }: { settings: Settings; sta
           <TriggerPicker value={s.trigger} onChange={(t) => void update({ trigger: t })} />
         </SettingRow>
         <SliderRow limit="dragThresholdPx" icon={<ArrowMove24Regular />} title={t.dragDistance} description={t.dragDistanceDesc}
-          value={s.dragThresholdPx} format={(v) => `${v} px`} onChange={(v) => void update({ dragThresholdPx: v })} dim={off} />
+          value={s.dragThresholdPx} format={(v) => `${v} ${LENGTH_UNIT}`} onChange={(v) => void update({ dragThresholdPx: v })} dim={off} />
         <SwitchRow icon={<CursorClick24Regular />} title={t.clickPing(trigger)}
           description={t.clickPingDesc(trigger)}
           checked={s.clickPing} onChange={(v) => void update({ clickPing: v })} dim={off} />
@@ -121,7 +134,7 @@ function SettingsPage({ settings: s, status, update }: { settings: Settings; sta
         <div className="section" id="toggle">{t.navToggle}</div>
         <SettingRow icon={<Keyboard24Regular />} title={t.toggleShortcut} description={t.toggleShortcutDesc}>
           <KeyCapture
-            parts={hotkeyParts(s.toggleHotkey)}
+            parts={hotkeyParts(s.toggleHotkey, PLATFORM)}
             requireModifier
             error={hotkeyError}
             onCapture={async (c) => {
@@ -135,7 +148,7 @@ function SettingsPage({ settings: s, status, update }: { settings: Settings; sta
 
         <div className="section" id="pings">{t.navPings}</div>
         <SliderRow limit="pingSizePx" icon={<ResizeLarge24Regular />} title={t.pingSize} value={s.pingSizePx}
-          format={(v) => `${v} px`} onChange={(v) => void update({ pingSizePx: v })} />
+          format={(v) => `${v} ${LENGTH_UNIT}`} onChange={(v) => void update({ pingSizePx: v })} />
         <SliderRow limit="pingDurationS" icon={<Timer24Regular />} title={t.pingDuration} description={t.pingDurationDesc}
           value={s.pingDurationS} format={(v) => `${v.toFixed(1)} s`} onChange={(v) => void update({ pingDurationS: v })} />
         <SliderRow limit="volume" icon={<Speaker224Regular />} title={t.volume} value={s.volume}

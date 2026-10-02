@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MOD } from '../../src/shared/keys';
 import {
-  DEFAULT_SETTINGS, mergeSettings, normalizeSettings, overlaySettings, triggerLabel,
+  DEFAULT_SETTINGS, keyboardTriggers, mergeSettings, normalizeSettings, overlaySettings, triggerLabel,
 } from '../../src/shared/settings';
 
 describe('normalizeSettings', () => {
@@ -73,6 +73,21 @@ describe('helpers', () => {
     expect(triggerLabel('capslock')).toBe('Caps Lock');
     expect(triggerLabel('mouse5')).toBe('Mouse 5');
     expect(triggerLabel({ vk: 0x56 })).toBe('V');
+  });
+
+  it('labels triggers with Mac names on macOS', () => {
+    expect(triggerLabel('alt', 'en', 'mac')).toBe('⌥ Option');
+    expect(triggerLabel('win', 'en', 'mac')).toBe('⌘ Command');
+    expect(triggerLabel({ vk: 0x0d }, 'en', 'mac')).toBe('Return');
+  });
+
+  it('offers Caps Lock only on Windows, and replaces a stored one on macOS', () => {
+    expect(keyboardTriggers('win')).toContain('capslock');
+    expect(keyboardTriggers('mac')).not.toContain('capslock');
+    expect(normalizeSettings({ trigger: 'capslock' }).trigger).toBe('capslock');
+    expect(normalizeSettings({ trigger: 'capslock' }, 'mac').trigger).toBe('alt');
+    expect(mergeSettings(DEFAULT_SETTINGS, { trigger: 'capslock' }, 'mac').trigger).toBe('alt');
+    expect(normalizeSettings({ trigger: 'win' }, 'mac').trigger).toBe('win');
   });
 
   it('extracts overlay settings', () => {

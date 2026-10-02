@@ -24,6 +24,16 @@ describe('language', () => {
     expect(zh.limitations).toHaveLength(en.limitations.length);
   });
 
+  it('has the same Mac wording in both languages', () => {
+    const en = strings('en', 'mac');
+    const zh = strings('zh-CN', 'mac');
+    expect(Object.keys(zh).sort()).toEqual(Object.keys(en).sort());
+    expect(zh.limitations).toHaveLength(en.limitations.length);
+    expect(en.launchAtStartup).toBe('Open at login');
+    expect(strings('en').launchAtStartup).toBe('Launch at Windows startup');
+    expect(strings('en', 'mac')).toBe(en); // stable identity: the settings page uses it as a React dependency
+  });
+
   it('defaults to auto and rejects unknown values', () => {
     expect(normalizeSettings({}).language).toBe('auto');
     expect(normalizeSettings({ language: 'zh-CN' }).language).toBe('zh-CN');
