@@ -1,0 +1,25 @@
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
+import type { SettingsApi } from '../shared/ipc';
+import { SETTINGS_CH } from '../shared/settingsChannels';
+
+function subscribe<T>(channel: string, cb: (v: T) => void): () => void {
+  const handler = (_e: IpcRendererEvent, v: T) => cb(v);
+  ipcRenderer.on(channel, handler);
+  return () => ipcRenderer.removeListener(channel, handler);
+}
+
+const api: SettingsApi = {
+  getSettings: () => ipcRenderer.invoke(SETTINGS_CH.get),
+  setSettings: (patch) => ipcRenderer.invoke(SETTINGS_CH.set, patch),
+  onSettings: (cb) => subscribe(SETTINGS_CH.changed, cb),
+  getStatus: () => ipcRenderer.invoke(SETTINGS_CH.status),
+  onStatus: (cb) => subscribe(SETTINGS_CH.statusChanged, cb),
+  setEnabled: (on) => ipcRenderer.invoke(SETTINGS_CH.setEnabled, on),
+  previewPing: (id) => ipcRenderer.invoke(SETTINGS_CH.preview, id),
+  getAbout: () => ipcRenderer.invoke(SETTINGS_CH.about),
+  openSettingsFolder: () => ipcRenderer.invoke(SETTINGS_CH.openFolder),
+  retryHelper: () => ipcRenderer.invoke(SETTINGS_CH.retryHelper),
+  setCapturing: (on) => ipcRenderer.invoke(SETTINGS_CH.capture, on),
+};
+
+contextBridge.exposeInMainWorld('settingsApi', api);

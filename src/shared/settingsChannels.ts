@@ -1,0 +1,14 @@
+/** Channel names for the settings window. Re-exported from ipc.ts; see the note there. */
+export const SETTINGS_CH = {
+  get: 'settings:get',
+  set: 'settings:set',
+  changed: 'settings:changed',
+  status: 'status:get',
+  statusChanged: 'status:changed',
+  setEnabled: 'app:setEnabled',
+  preview: 'app:preview',
+  about: 'app:about',
+  openFolder: 'app:openSettingsFolder',
+  retryHelper: 'app:retryHelper',
+  capture: 'app:capture',
+} as const;

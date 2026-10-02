@@ -1,0 +1,81 @@
+import { describe, expect, it } from 'vitest';
+import { MOD } from '../../src/shared/keys';
+import {
+  DEFAULT_SETTINGS, mergeSettings, normalizeSettings, overlaySettings, triggerLabel,
+} from '../../src/shared/settings';
+
+describe('normalizeSettings', () => {
+  it('returns defaults for missing or non-object input', () => {
+    for (const raw of [undefined, null, 42, 'x', [1, 2]]) expect(normalizeSettings(raw)).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('keeps valid values', () => {
+    const s = normalizeSettings({ ...DEFAULT_SETTINGS, trigger: 'mouse4', volume: 30, clickPing: true });
+    expect(s.trigger).toBe('mouse4');
+    expect(s.volume).toBe(30);
+    expect(s.clickPing).toBe(true);
+  });
+
+  it('clamps and rounds numbers to their limits', () => {
+    const s = normalizeSettings({ dragThresholdPx: 0, pingSizePx: 999, pingDurationS: 3.27, volume: 55.6 });
+    expect(s.dragThresholdPx).toBe(2);
+    expect(s.pingSizePx).toBe(220);
+    expect(s.pingDurationS).toBe(3.3);
+    expect(s.volume).toBe(56);
+  });
+
+  it('replaces wrong types and non-finite numbers with defaults', () => {
+    const s = normalizeSettings({ volume: Number.NaN, muted: 'yes', pingSizePx: '120', launchAtStartup: 1 });
+    expect(s.volume).toBe(DEFAULT_SETTINGS.volume);
+    expect(s.muted).toBe(false);
+    expect(s.pingSizePx).toBe(DEFAULT_SETTINGS.pingSizePx);
+    expect(s.launchAtStartup).toBe(false);
+  });
+
+  it('accepts custom-key triggers and rejects unknown ones', () => {
+    expect(normalizeSettings({ trigger: { vk: 0x56 } }).trigger).toEqual({ vk: 0x56 });
+    expect(normalizeSettings({ trigger: { vk: 300 } }).trigger).toBe('alt');
+    expect(normalizeSettings({ trigger: 'meta' }).trigger).toBe('alt');
+  });
+
+  it('requires a modifier and a valid key in the toggle hotkey', () => {
+    expect(normalizeSettings({ toggleHotkey: { mods: MOD.ctrl, vk: 0x4b } }).toggleHotkey).toEqual({ mods: 1, vk: 0x4b });
+    expect(normalizeSettings({ toggleHotkey: { mods: 0, vk: 0x4b } }).toggleHotkey).toEqual(DEFAULT_SETTINGS.toggleHotkey);
+    expect(normalizeSettings({ toggleHotkey: { mods: 3, vk: 0 } }).toggleHotkey).toEqual(DEFAULT_SETTINGS.toggleHotkey);
+    expect(normalizeSettings({ toggleHotkey: { mods: 99, vk: 0x4b } }).toggleHotkey).toEqual(DEFAULT_SETTINGS.toggleHotkey);
+  });
+
+  it('rejects a Shift-only toggle hotkey (it would swallow ordinary typing)', () => {
+    expect(normalizeSettings({ toggleHotkey: { mods: MOD.shift, vk: 0x41 } }).toggleHotkey).toEqual(DEFAULT_SETTINGS.toggleHotkey);
+    expect(normalizeSettings({ toggleHotkey: { mods: MOD.ctrl | MOD.shift, vk: 0x41 } }).toggleHotkey).toEqual({ mods: 5, vk: 0x41 });
+    expect(normalizeSettings({ toggleHotkey: { mods: MOD.alt | MOD.shift, vk: 0x41 } }).toggleHotkey).toEqual({ mods: 6, vk: 0x41 });
+    expect(normalizeSettings({ toggleHotkey: { mods: MOD.win | MOD.shift, vk: 0x41 } }).toggleHotkey).toEqual({ mods: 12, vk: 0x41 });
+    expect(normalizeSettings({ toggleHotkey: { mods: MOD.win, vk: 0x41 } }).toggleHotkey).toEqual({ mods: 8, vk: 0x41 });
+  });
+
+  it('does not share the default hotkey object', () => {
+    expect(normalizeSettings(undefined).toggleHotkey).not.toBe(DEFAULT_SETTINGS.toggleHotkey);
+  });
+});
+
+describe('mergeSettings', () => {
+  it('applies a patch and re-normalizes it', () => {
+    const s = mergeSettings(DEFAULT_SETTINGS, { volume: 500, tickSound: false });
+    expect(s.volume).toBe(100);
+    expect(s.tickSound).toBe(false);
+    expect(s.trigger).toBe('alt');
+  });
+});
+
+describe('helpers', () => {
+  it('labels triggers', () => {
+    expect(triggerLabel('alt')).toBe('Alt');
+    expect(triggerLabel('capslock')).toBe('Caps Lock');
+    expect(triggerLabel('mouse5')).toBe('Mouse 5');
+    expect(triggerLabel({ vk: 0x56 })).toBe('V');
+  });
+
+  it('extracts overlay settings', () => {
+    expect(overlaySettings(DEFAULT_SETTINGS)).toEqual({ pingSizePx: 110, pingDurationS: 3.2, volume: 70, muted: false, tickSound: true });
+  });
+});
