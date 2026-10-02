@@ -71,6 +71,9 @@ class Decision {
   Result setSuspended(bool on);
   Result onEvent(const InputEvent& e);
   Result tick(uint64_t nowMs);
+  // Windows opens the menu bar / Start menu on a lone Alt / Win key-up, so a swallowed press while one is held
+  // gets a mask key before that key-up. macOS has no such behaviour: its hook layer turns this off.
+  void setMaskMenuKeys(bool on) { maskMenuKeys_ = on; }
 
   // Resync with the OS: forget keys we believe are down but isDown(vk) says are up
   // (key-ups the hook never saw: Win+L, Ctrl+Alt+Del, UAC, hook reinstall). Never marks a key as down.
@@ -106,6 +109,7 @@ class Decision {
   std::set<uint32_t> swallowKeyUps_;
   bool swallowRightUp_ = false;
   bool needMask_ = false;
+  bool maskMenuKeys_ = true;
   Btn dragBtn_ = Btn::None;
   int px_ = 0;
   int py_ = 0;
