@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/danruimeng/lolPing/releases/latest"><b>Download for Windows</b></a> ·
-  <a href="https://github.com/danruimeng/lolPing/releases/latest"><b>Download for Mac</b></a> (Apple Silicon, experimental)
+  <a href="https://github.com/darrenprx/lolPing/releases/latest"><b>Download for Windows</b></a> ·
+  <a href="https://github.com/darrenprx/lolPing/releases/latest"><b>Download for Mac</b></a> (Apple Silicon, experimental)
 </p>
 
 <p align="center">
-  <a href="https://github.com/danruimeng/lolPing/actions/workflows/ci.yml"><img src="https://github.com/danruimeng/lolPing/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/danruimeng/lolPing/releases/latest"><img src="https://img.shields.io/github/v/release/danruimeng/lolPing" alt="Latest release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/danruimeng/lolPing" alt="MIT license"></a>
+  <a href="https://github.com/darrenprx/lolPing/actions/workflows/ci.yml"><img src="https://github.com/darrenprx/lolPing/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/darrenprx/lolPing/releases/latest"><img src="https://img.shields.io/github/v/release/darrenprx/lolPing" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/darrenprx/lolPing" alt="MIT license"></a>
 </p>
 
 <p align="center"><img src="docs/media/demo.gif" width="880" alt="An app freezes with a not-responding dialog, and the ping wheel drops three Enemy Missing pings on it"></p>
@@ -28,7 +28,7 @@ Pings show up in whole-screen capture, so friends watching your Discord or OBS s
 
 ### Windows
 
-1. Download `lolPing-Setup-<version>.exe` from the [latest release](https://github.com/danruimeng/lolPing/releases/latest).
+1. Download `lolPing-Setup-<version>.exe` from the [latest release](https://github.com/darrenprx/lolPing/releases/latest).
 2. Run it. The installer isn't code-signed, so Windows SmartScreen may say "Windows protected your PC". Select **More info**, then **Run anyway**.
 3. lolPing opens its settings and moves to the tray. Hold Alt and drag anywhere to ping.
 
@@ -36,9 +36,9 @@ lolPing is built for Windows 11, 64-bit. Windows 10 may work, but it isn't teste
 
 ### macOS (experimental)
 
-The Mac version needs an Apple Silicon Mac (M1 or later) and macOS 12 or later. It is built and tested automatically, but hasn't had much use on real Macs yet. Please [report](https://github.com/danruimeng/lolPing/issues) anything that doesn't work.
+The Mac version needs an Apple Silicon Mac (M1 or later) and macOS 12 or later. It is built and tested automatically, but hasn't had much use on real Macs yet. Please [report](https://github.com/darrenprx/lolPing/issues) anything that doesn't work.
 
-1. Download `lolPing-<version>-arm64.dmg` from the [latest release](https://github.com/danruimeng/lolPing/releases/latest), open it, and drag lolPing into Applications.
+1. Download `lolPing-<version>-arm64.dmg` from the [latest release](https://github.com/darrenprx/lolPing/releases/latest), open it, and drag lolPing into Applications.
 2. Open lolPing. It isn't signed by a registered Apple developer, so macOS says it can't check it for malware. Select **Done**, open **System Settings → Privacy & Security**, scroll down, select **Open Anyway** next to the lolPing message, and confirm.
    If macOS instead says lolPing "is damaged", run `xattr -dr com.apple.quarantine /Applications/lolPing.app` in Terminal and open it again.
 3. lolPing asks for **Accessibility** access, which it needs to read the mouse and keyboard. Select **Open System Settings** and turn lolPing on. Pinging starts as soon as it's allowed.

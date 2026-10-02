@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/danruimeng/lolPing/releases/latest"><b>下载 Windows 版</b></a> ·
-  <a href="https://github.com/danruimeng/lolPing/releases/latest"><b>下载 Mac 版</b></a>（Apple 芯片，实验性）
+  <a href="https://github.com/darrenprx/lolPing/releases/latest"><b>下载 Windows 版</b></a> ·
+  <a href="https://github.com/darrenprx/lolPing/releases/latest"><b>下载 Mac 版</b></a>（Apple 芯片，实验性）
 </p>
 
 <p align="center">
-  <a href="https://github.com/danruimeng/lolPing/actions/workflows/ci.yml"><img src="https://github.com/danruimeng/lolPing/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="https://github.com/danruimeng/lolPing/releases/latest"><img src="https://img.shields.io/github/v/release/danruimeng/lolPing" alt="最新版本"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/danruimeng/lolPing" alt="MIT 许可证"></a>
+  <a href="https://github.com/darrenprx/lolPing/actions/workflows/ci.yml"><img src="https://github.com/darrenprx/lolPing/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/darrenprx/lolPing/releases/latest"><img src="https://img.shields.io/github/v/release/darrenprx/lolPing" alt="最新版本"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/darrenprx/lolPing" alt="MIT 许可证"></a>
 </p>
 
 <p align="center"><img src="docs/media/demo.zh-CN.gif" width="880" alt="一个程序卡死弹出“未响应”对话框，信号轮盘在上面连发三个“敌人消失”信号"></p>
@@ -28,7 +28,7 @@
 
 ### Windows
 
-1. 从[最新版本](https://github.com/danruimeng/lolPing/releases/latest)下载 `lolPing-Setup-<版本号>.exe`。
+1. 从[最新版本](https://github.com/darrenprx/lolPing/releases/latest)下载 `lolPing-Setup-<版本号>.exe`。
 2. 运行安装程序。安装程序没有代码签名，Windows SmartScreen 可能会提示“Windows 已保护你的电脑”：点击**更多信息**，再点**仍要运行**。
 3. lolPing 会打开设置窗口并常驻系统托盘。按住 Alt 在任意位置拖动即可发信号。
 
@@ -36,9 +36,9 @@ lolPing 面向 64 位 Windows 11。Windows 10 也许可以用，但没有测试�
 
 ### macOS（实验性）
 
-Mac 版需要 Apple 芯片（M1 或更新）的 Mac 和 macOS 12 或更新版本。它会自动构建和测试，但还没在真实的 Mac 上用过多少。遇到问题请[反馈](https://github.com/danruimeng/lolPing/issues)。
+Mac 版需要 Apple 芯片（M1 或更新）的 Mac 和 macOS 12 或更新版本。它会自动构建和测试，但还没在真实的 Mac 上用过多少。遇到问题请[反馈](https://github.com/darrenprx/lolPing/issues)。
 
-1. 从[最新版本](https://github.com/danruimeng/lolPing/releases/latest)下载 `lolPing-<版本号>-arm64.dmg`，打开后把 lolPing 拖进“应用程序”。
+1. 从[最新版本](https://github.com/darrenprx/lolPing/releases/latest)下载 `lolPing-<版本号>-arm64.dmg`，打开后把 lolPing 拖进“应用程序”。
 2. 打开 lolPing。它没有经过注册 Apple 开发者的签名，macOS 会提示无法检查其是否包含恶意软件：点“完成”，打开**系统设置 → 隐私与安全性**，向下滚动，在 lolPing 的提示旁点**仍要打开**并确认。
    如果 macOS 提示 lolPing“已损坏”，请在“终端”中运行 `xattr -dr com.apple.quarantine /Applications/lolPing.app`，然后再次打开。
 3. lolPing 会请求**辅助功能**权限，用来读取鼠标和键盘。点“打开系统设置”并打开 lolPing。授权后立即可以发信号。
