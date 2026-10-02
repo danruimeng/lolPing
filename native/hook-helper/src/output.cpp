@@ -42,6 +42,10 @@ void Output::ready() { line("{\"type\":\"ready\",\"version\":1}"); }
 
 void Output::error(const std::string& message) { line("{\"type\":\"error\",\"message\":\"" + jsonEscape(message) + "\"}"); }
 
+void Output::error(const std::string& code, const std::string& message) {
+  line("{\"type\":\"error\",\"code\":\"" + jsonEscape(code) + "\",\"message\":\"" + jsonEscape(message) + "\"}");
+}
+
 void Output::stop() {
   {
     std::lock_guard<std::mutex> lk(mu_);

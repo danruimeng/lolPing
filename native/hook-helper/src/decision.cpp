@@ -93,7 +93,7 @@ Btn Decision::dragButton() const {
 // Something was swallowed while Alt or Win is held: their key-up must be masked,
 // otherwise Windows opens the menu bar / Start menu.
 void Decision::markSwallow() {
-  if ((mods() & (ModAlt | ModWin)) != 0) needMask_ = true;
+  if (maskMenuKeys_ && (mods() & (ModAlt | ModWin)) != 0) needMask_ = true;
 }
 
 void Decision::cancelGesture(Result& r) {
