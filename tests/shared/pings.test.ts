@@ -2,21 +2,28 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  ALL_PINGS, GENERIC_PING, WHEEL_PINGS, allSoundNames, allTextureNames, pingById, soundUrl, textureUrl,
+  ALL_PINGS, DEFAULT_WHEEL, DEFAULT_WHEEL_PINGS, allSoundNames, allTextureNames, pingById, soundUrl, textureUrl,
 } from '../../src/shared/pings';
 
 const assets = resolve(__dirname, '../../assets');
 
 describe('ping table', () => {
-  it('lists the 8 wheel slices top then clockwise', () => {
-    expect(WHEEL_PINGS.map((p) => p.id)).toEqual([
-      'danger', 'push', 'omw', 'allin', 'assist', 'needvision', 'missing', 'enemyvision',
-    ]);
+  it('lays out the default wheel top then clockwise', () => {
+    expect(DEFAULT_WHEEL).toEqual(['danger', 'push', 'omw', 'allin', 'assist', 'needvision', 'missing', 'enemyvision']);
+    expect(DEFAULT_WHEEL_PINGS.map((p) => p.id)).toEqual(DEFAULT_WHEEL);
   });
 
-  it('keeps the generic ping off the wheel', () => {
-    expect(WHEEL_PINGS).not.toContain(GENERIC_PING);
-    expect(ALL_PINGS.at(-1)).toBe(GENERIC_PING);
+  it('offers the generic, Bait and Vision Cleared pings beyond the default wheel', () => {
+    expect(ALL_PINGS.map((p) => p.id)).toEqual([...DEFAULT_WHEEL, 'generic', 'bait', 'visioncleared']);
+  });
+
+  it('uses the in-game sounds for Bait and Vision Cleared', () => {
+    expect(pingById('bait')?.sound).toBe('SRP_11');
+    expect(pingById('visioncleared')?.sound).toBe('SRP_6');
+  });
+
+  it('draws Bait with the same render on the wheel and on screen', () => {
+    expect(pingById('bait')).toMatchObject({ icon: 'pingwheel_baitrender', art: ['pingwheel_baitrender'] });
   });
 
   it('has unique ids', () => {

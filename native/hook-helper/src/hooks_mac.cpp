@@ -147,14 +147,14 @@ CGEventRef tapCallback(CGEventTapProxy, CGEventType type, CGEventRef event, void
   e.x = static_cast<int>(std::lround(p.x));
   e.y = static_cast<int>(std::lround(p.y));
   e.timeMs = t;
-  bool dragged = false;
   switch (type) {
-    case kCGEventMouseMoved: e.kind = EvKind::MouseMove; break;
+    // Dragged events always pass through, even after the press was swallowed: dropping them at the session tap
+    // freezes the cursor. Apps that never saw the press ignore a drag without one.
+    case kCGEventMouseMoved:
     case kCGEventLeftMouseDragged:
     case kCGEventRightMouseDragged:
     case kCGEventOtherMouseDragged:
       e.kind = EvKind::MouseMove;
-      dragged = true;
       break;
     case kCGEventLeftMouseDown: e.kind = EvKind::MouseDown; e.btn = Btn::Left; break;
     case kCGEventLeftMouseUp: e.kind = EvKind::MouseUp; e.btn = Btn::Left; break;
@@ -169,10 +169,7 @@ CGEventRef tapCallback(CGEventTapProxy, CGEventType type, CGEventRef event, void
       return event;
   }
   if (e.kind == EvKind::MouseDown) g_decision->syncKeyStates(isKeyDown);
-  // Pending, Wheel and SwallowUp all mean a press was swallowed: the app must not see the drag that follows it.
-  const bool gesture = g_decision->state() != Decision::State::Idle;
-  const bool swallow = apply(g_decision->onEvent(e));
-  return swallow || (dragged && gesture) ? nullptr : event;
+  return apply(g_decision->onEvent(e)) ? nullptr : event;
 }
 
 void handleCommand(const std::string& text) {

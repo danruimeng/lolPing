@@ -53,6 +53,29 @@ describe('normalizeSettings', () => {
     expect(normalizeSettings({ toggleHotkey: { mods: MOD.win, vk: 0x41 } }).toggleHotkey).toEqual({ mods: 8, vk: 0x41 });
   });
 
+  it('keeps a valid custom wheel and click ping', () => {
+    const wheel = ['bait', 'push', 'omw', 'allin', 'assist', 'needvision', 'missing', 'visioncleared'];
+    const s = normalizeSettings({ wheel, clickPingId: 'danger' });
+    expect(s.wheel).toEqual(wheel);
+    expect(s.clickPingId).toBe('danger');
+  });
+
+  it('resets an invalid wheel to the default layout', () => {
+    const dup = ['push', 'push', 'omw', 'allin', 'assist', 'needvision', 'missing', 'enemyvision'];
+    for (const wheel of [dup, ['danger'], 'danger', [...DEFAULT_SETTINGS.wheel.slice(0, 7), 'nope'], undefined]) {
+      expect(normalizeSettings({ wheel }).wheel).toEqual(DEFAULT_SETTINGS.wheel);
+    }
+  });
+
+  it('resets an unknown click ping to the generic ping', () => {
+    expect(normalizeSettings({ clickPingId: 'nope' }).clickPingId).toBe('generic');
+    expect(normalizeSettings({ clickPingId: 3 }).clickPingId).toBe('generic');
+  });
+
+  it('does not share the default wheel array', () => {
+    expect(normalizeSettings(undefined).wheel).not.toBe(DEFAULT_SETTINGS.wheel);
+  });
+
   it('does not share the default hotkey object', () => {
     expect(normalizeSettings(undefined).toggleHotkey).not.toBe(DEFAULT_SETTINGS.toggleHotkey);
   });
@@ -91,6 +114,9 @@ describe('helpers', () => {
   });
 
   it('extracts overlay settings', () => {
-    expect(overlaySettings(DEFAULT_SETTINGS)).toEqual({ pingSizePx: 110, pingDurationS: 3.2, volume: 70, muted: false, tickSound: true });
+    expect(overlaySettings(DEFAULT_SETTINGS)).toEqual({
+      pingSizePx: 110, pingDurationS: 3.2, volume: 70, muted: false, tickSound: true,
+      wheel: ['danger', 'push', 'omw', 'allin', 'assist', 'needvision', 'missing', 'enemyvision'], clickPingId: 'generic',
+    });
   });
 });

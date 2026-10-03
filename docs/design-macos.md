@@ -1,7 +1,7 @@
 # lolPing for macOS — Design Spec
 
 **Date:** 2026-10-02
-**Status:** Implemented in v0.2.0 (experimental: built and unit-tested on CI, not yet tried on a real Mac)
+**Status:** Implemented in v0.2.0 (experimental). v0.2.1 fixes a frozen cursor during gestures, found in the first test on a real Mac
 
 ## 1. Purpose and constraints
 
@@ -47,7 +47,7 @@ The helper stays one C++ program. `decision.cpp`, `commands`, `json`, `output`, 
 ### 2.3 Mouse
 
 - Coordinates are `CGEventGetLocation`: global points with the origin at the top-left of the main display. That is Electron's DIP space, so the helper sends points, not pixels.
-- `LeftMouseDragged`/`RightMouseDragged`/`OtherMouseDragged` are fed to `Decision` as moves. While a gesture whose press was swallowed is in progress, the dragged events are swallowed too, so the app underneath never gets a drag without a press. **Assumption to verify on a real Mac:** the cursor keeps moving when session-level dragged events are dropped. If not, stop swallowing them.
+- `LeftMouseDragged`/`RightMouseDragged`/`OtherMouseDragged` are fed to `Decision` as moves and always pass through, like moves on Windows. Swallowing them during a gesture froze the cursor on a real Mac. The app underneath does receive drags whose press it never saw, which apps ignore.
 - Mouse 4/5 are `OtherMouseDown` with button numbers 3 and 4.
 
 ### 2.4 Permission

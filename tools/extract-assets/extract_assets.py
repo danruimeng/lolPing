@@ -5,10 +5,11 @@ Requirements:
   * Python 3.14+ (uses the built-in compression.zstd module)
   * ffmpeg on PATH
   * vgmstream-cli (https://github.com/vgmstream/vgmstream/releases), passed with --vgmstream
-  * Pillow, only for --dds-dir
+  * Pillow, only for --dds-dir and --wad-textures
 
 Examples:
   py -3.14 tools/extract-assets/extract_assets.py --league "C:/Riot Games/League of Legends" --vgmstream C:/tools/vgmstream/vgmstream-cli.exe
+  py -3.14 tools/extract-assets/extract_assets.py --league "C:/Riot Games/League of Legends" --wad-textures
   py -3.14 tools/extract-assets/extract_assets.py --dds-dir C:/Users/me/Downloads/need
 """
 import argparse
@@ -24,6 +25,7 @@ REPO = Path(__file__).resolve().parents[2]
 SOUND_OUT = REPO / 'assets' / 'sounds'
 TEXTURE_OUT = REPO / 'assets' / 'textures'
 WAD_REL = Path('Game/DATA/FINAL/Maps/Shipping/Common.wad.client')
+GLOBAL_WAD_REL = Path('Game/DATA/FINAL/Global.wad.client')
 BANK_DIR = 'assets/sounds/wwise2016/sfx/shared/'
 EVENTS_BANK = BANK_DIR + 'hud_global_events.bnk'
 AUDIO_BANK = BANK_DIR + 'hud_global_audio.bnk'
@@ -39,7 +41,16 @@ SOUNDS = {
     'MIA': 'Play_sfx_hud_base_Pings_MIA',                    # enemy missing
     'AreaIsWarded': 'Play_sfx_hud_base_Pings_AreaIsWarded',  # enemy vision
     'Base': 'Play_sfx_hud_base_Pings_Base',                  # generic
+    'SRP_11': 'Play_sfx_hud_base_Pings_SRP_11',              # bait
+    'SRP_6': 'Play_sfx_hud_base_Pings_SRP_6',                # vision cleared
     'button': 'Play_sfx_hud_base_Pings_button',              # wheel tick
+}
+
+# output png name -> League .tex in Global.wad.client (the other textures came from Obsidian DDS exports, see README)
+WAD_TEXTURES = {
+    'pingwheel_baitrender': 'ASSETS/Shared/Particles/PingUpdate/PingWheel_Bait.tex',
+    'vision_cleared': 'ASSETS/Shared/Particles/PingUpdate/Need/Vision_Cleared.tex',
+    'pingwheel_visionclearedrender': 'ASSETS/Shared/Particles/PingUpdate/Need/PingWheel_VisionClearedRender.tex',
 }
 
 # ---- xxHash64 (WAD path hashes) ----
@@ -224,17 +235,40 @@ def convert_textures(dds_dir: Path) -> None:
         print('texture', dds.stem)
 
 
+def tex_to_png(data: bytes, out: Path) -> None:
+    """League TEX (DXT5 with mipmaps stored smallest first) -> PNG, by wrapping the full-size level in a DDS header."""
+    import io
+    from PIL import Image
+
+    magic, w, h, _unk, fmt, _res, _flags = struct.unpack_from('<4sHHBBBB', data)
+    if magic != b'TEX\0' or fmt != 12:
+        raise SystemExit(f'{out.name}: unsupported TEX (magic {magic!r}, format {fmt}); only DXT5 is handled')
+    size = max(1, (w + 3) // 4) * max(1, (h + 3) // 4) * 16
+    dds = (b'DDS ' + struct.pack('<7I', 124, 0x81007, h, w, size, 0, 1) + b'\0' * 44
+           + struct.pack('<II4s5I', 32, 4, b'DXT5', 0, 0, 0, 0, 0) + struct.pack('<5I', 0x1000, 0, 0, 0, 0))
+    Image.open(io.BytesIO(dds + data[-size:])).convert('RGBA').save(out)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--league', type=Path, help='League of Legends install folder (the one containing Game/)')
     ap.add_argument('--vgmstream', default='vgmstream-cli', help='path to vgmstream-cli.exe')
     ap.add_argument('--dds-dir', type=Path, help='folder of .dds textures to convert to PNG')
+    ap.add_argument('--wad-textures', action='store_true', help='with --league: extract only the WAD_TEXTURES, no sounds')
     args = ap.parse_args()
     if not args.league and not args.dds_dir:
         ap.error('pass --league and/or --dds-dir')
+    if args.wad_textures and not args.league:
+        ap.error('--wad-textures needs --league')
     if args.dds_dir:
         convert_textures(args.dds_dir)
-    if args.league:
+    if args.wad_textures:
+        files = wad_read(args.league / GLOBAL_WAD_REL, list(WAD_TEXTURES.values()))
+        TEXTURE_OUT.mkdir(parents=True, exist_ok=True)
+        for name, path in WAD_TEXTURES.items():
+            tex_to_png(files[path], TEXTURE_OUT / f'{name}.png')
+            print('texture', name)
+    elif args.league:
         if shutil.which('ffmpeg') is None:
             raise SystemExit('ffmpeg not found on PATH')
         files = wad_read(args.league / WAD_REL, [EVENTS_BANK, AUDIO_BANK])

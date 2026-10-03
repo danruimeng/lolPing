@@ -1,5 +1,5 @@
 import {
-  GENERIC_PING, TICK_SOUND, allSoundNames, allTextureNames, pingById, textureUrl, type PingDef,
+  DEFAULT_CLICK_PING, TICK_SOUND, allSoundNames, allTextureNames, pingById, pingsFor, textureUrl, type PingDef,
 } from '../../shared/pings';
 import { DEFAULT_SETTINGS, overlaySettings, type OverlaySettings } from '../../shared/settings';
 import { spawnPing } from './pingFx';
@@ -13,6 +13,7 @@ const svg = document.getElementById('wheel') as unknown as SVGSVGElement;
 
 const sounds = new SoundBank();
 let settings: OverlaySettings = overlaySettings(DEFAULT_SETTINGS);
+const [fallbackPing] = pingsFor([DEFAULT_CLICK_PING]);
 const volume = (): number => (settings.muted ? 0 : settings.volume / 100);
 
 const wheel = new Wheel(svg, () => {
@@ -26,6 +27,7 @@ function ping(def: PingDef, x: number, y: number): void {
 
 window.overlay.on('overlay:settings', (s) => {
   settings = s;
+  wheel.setPings(pingsFor(s.wheel));
 });
 window.overlay.on('wheel:open', (p) => wheel.open(p.x, p.y));
 window.overlay.on('wheel:move', (p) => wheel.move(p.x, p.y));
@@ -34,7 +36,7 @@ window.overlay.on('wheel:release', (p) => {
   if (chosen) ping(chosen.def, chosen.x, chosen.y);
 });
 window.overlay.on('wheel:cancel', () => wheel.cancel());
-window.overlay.on('ping:spawn', (p) => ping(pingById(p.id) ?? GENERIC_PING, p.x, p.y));
+window.overlay.on('ping:spawn', (p) => ping(pingById(p.id) ?? fallbackPing, p.x, p.y));
 window.overlay.on('toast:show', (t) => showToast(toastLayer, t.title, t.body));
 
 function checkTextures(): Promise<string[]> {

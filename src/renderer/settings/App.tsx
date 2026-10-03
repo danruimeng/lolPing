@@ -1,6 +1,6 @@
 import { Dropdown, FluentProvider, Option, webDarkTheme, webLightTheme } from '@fluentui/react-components';
 import {
-  ArrowMove24Regular, CursorClick24Regular, Info24Regular, Keyboard24Regular, MusicNote224Regular, Play24Regular,
+  ArrowMove24Regular, CursorClick24Regular, DataPie24Regular, Info24Regular, Keyboard24Regular, MusicNote224Regular,
   Power24Regular, ResizeLarge24Regular, Rocket24Regular, Settings24Regular, Speaker224Regular, SpeakerMute24Regular,
   Timer24Regular, Cursor24Regular, LocalLanguage24Regular,
 } from '@fluentui/react-icons';
@@ -14,10 +14,10 @@ import { api } from './api';
 import { AboutSection } from './components/AboutSection';
 import { KeyCapture } from './components/KeyCapture';
 import { PermissionCard } from './components/PermissionCard';
-import { PreviewGrid } from './components/PreviewGrid';
 import { SettingRow, SliderRow, SwitchRow } from './components/rows';
 import { StatusCard } from './components/StatusCard';
 import { TriggerPicker } from './components/TriggerPicker';
+import { WheelEditor } from './components/WheelEditor';
 import { TextContext, useText } from './text';
 import { macDarkTheme, macLightTheme } from './macTheme';
 import { useAppState, type Update } from './useAppState';
@@ -31,7 +31,7 @@ const SECTIONS: { id: string; label: (t: Strings) => string; icon: ReactNode }[]
   { id: 'trigger', label: (t) => t.navTrigger, icon: <Cursor24Regular /> },
   { id: 'toggle', label: (t) => t.navToggle, icon: <Keyboard24Regular /> },
   { id: 'pings', label: (t) => t.navPings, icon: <Speaker224Regular /> },
-  { id: 'preview', label: (t) => t.navPreview, icon: <Play24Regular /> },
+  { id: 'wheel', label: (t) => t.navWheel, icon: <DataPie24Regular /> },
   { id: 'app', label: (t) => t.navApp, icon: <Settings24Regular /> },
 ];
 
@@ -157,8 +157,9 @@ function SettingsPage({ settings: s, status, update }: { settings: Settings; sta
         <SwitchRow icon={<MusicNote224Regular />} title={t.tickSound} description={t.tickSoundDesc}
           checked={s.tickSound} onChange={(v) => void update({ tickSound: v })} />
 
-        <div className="section" id="preview">{t.navPreview}</div>
-        <PreviewGrid />
+        <div className="section" id="wheel">{t.navWheel}</div>
+        <WheelEditor wheel={s.wheel} clickPingId={s.clickPingId} clickPingOn={s.clickPing} trigger={trigger}
+          onChange={(patch) => void update(patch)} />
 
         <div className="section" id="app">{t.navApp}</div>
         <SwitchRow icon={<Rocket24Regular />} title={t.launchAtStartup} description={t.launchAtStartupDesc}

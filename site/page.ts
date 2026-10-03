@@ -3,7 +3,7 @@ import type { PingId } from '../src/shared/pings';
 import { Autoplay, DEMO_STROKES, HUNG_STROKES } from './autoplay';
 import { initInput, onUserPing } from './input';
 import { emit } from './overlayShim';
-import { WHEEL_PINGS, textureUrl } from './pings';
+import { DEFAULT_WHEEL_PINGS, textureUrl } from './pings';
 import { isSoundOn, setSoundOn } from './sound';
 
 const MEANINGS: Record<PingId, string> = {
@@ -16,12 +16,14 @@ const MEANINGS: Record<PingId, string> = {
   missing: 'My lane opponent left.',
   enemyvision: 'They have a ward here.',
   generic: 'Look here.',
+  bait: 'Act weak and lure them in.',
+  visioncleared: 'Their ward here is gone.',
 };
 
 const $ = <T extends HTMLElement>(sel: string): T => document.querySelector(sel) as T;
 
 function buildLegend(list: HTMLElement): void {
-  for (const p of WHEEL_PINGS) {
+  for (const p of DEFAULT_WHEEL_PINGS) {
     const li = document.createElement('li');
     const button = document.createElement('button');
     button.type = 'button';

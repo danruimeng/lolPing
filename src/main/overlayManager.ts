@@ -51,7 +51,7 @@ export class OverlayManager {
       }
       case 'click': {
         const p = physicalToLocal(ev.x, ev.y, this.maps);
-        if (p) this.send(p.displayId, 'ping:spawn', { id: 'generic', x: p.x, y: p.y });
+        if (p) this.send(p.displayId, 'ping:spawn', { id: this.settings.clickPingId, x: p.x, y: p.y });
         break;
       }
       case 'cancel':

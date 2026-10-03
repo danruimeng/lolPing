@@ -15,10 +15,18 @@ py -3.14 tools/extract-assets/extract_assets.py --league "C:/Riot Games/League o
 
 ## Textures
 
-The textures were exported as DDS (DXT5) with Obsidian. To convert a folder of them:
+Most textures were exported as DDS (DXT5) with Obsidian. To convert a folder of them:
 
 ```bash
 py -3.14 tools/extract-assets/extract_assets.py --dds-dir path/to/dds
 ```
+
+Bait and Vision Cleared are read straight from League's `.tex` files in `Global.wad.client` (see `WAD_TEXTURES` in the script). This needs Pillow installed for Python 3.14:
+
+```bash
+py -3.14 tools/extract-assets/extract_assets.py --league "C:/Riot Games/League of Legends" --wad-textures
+```
+
+No game file says which sound those two pings play: `SRP_11` (Bait) and `SRP_6` (Vision Cleared) were identified by listening. `SRP_13` is the structure-defend ping.
 
 Never reference the colourblind (`*_cb*`) files in the app.

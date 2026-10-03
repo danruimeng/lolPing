@@ -1,6 +1,8 @@
 import { LANGUAGE_PREFS, strings, type Lang, type LanguagePref } from './i18n';
 import { HOTKEY_PRIMARY_MODS, MOD, type Hotkey, vkLabel } from './keys';
+import { DEFAULT_CLICK_PING, DEFAULT_WHEEL, isPingId, type PingId } from './pings';
 import type { Platform } from './platform';
+import { isValidWheel } from './wheelLayout';
 
 export type NamedTrigger = 'alt' | 'ctrl' | 'shift' | 'win' | 'capslock' | 'mouse4' | 'mouse5';
 export type TriggerKey = NamedTrigger | { vk: number };
@@ -16,6 +18,10 @@ export interface Settings {
   trigger: TriggerKey;
   dragThresholdPx: number;
   clickPing: boolean;
+  /** Which ping trigger + click places. */
+  clickPingId: PingId;
+  /** The wheel's slices, top (N) then clockwise. */
+  wheel: PingId[];
   toggleHotkey: Hotkey;
   pingSizePx: number;
   pingDurationS: number;
@@ -32,6 +38,8 @@ export const DEFAULT_SETTINGS: Settings = {
   trigger: 'alt',
   dragThresholdPx: 8,
   clickPing: false,
+  clickPingId: DEFAULT_CLICK_PING,
+  wheel: [...DEFAULT_WHEEL],
   toggleHotkey: { mods: MOD.ctrl | MOD.alt, vk: 0x50 },
   pingSizePx: 110,
   pingDurationS: 3.2,
@@ -91,6 +99,8 @@ export function normalizeSettings(raw: unknown, platform: Platform = 'win'): Set
     trigger: trigger(r.trigger, platform),
     dragThresholdPx: num(r.dragThresholdPx, 'dragThresholdPx'),
     clickPing: bool(r.clickPing, 'clickPing'),
+    clickPingId: isPingId(r.clickPingId) ? r.clickPingId : DEFAULT_CLICK_PING,
+    wheel: isValidWheel(r.wheel) ? [...r.wheel] : [...DEFAULT_WHEEL],
     toggleHotkey: hotkey(r.toggleHotkey),
     pingSizePx: num(r.pingSizePx, 'pingSizePx'),
     pingDurationS: num(r.pingDurationS, 'pingDurationS'),
@@ -118,8 +128,9 @@ export function triggerLabel(t: TriggerKey, lang: Lang = 'en', platform: Platfor
   return KEY_LABELS[platform][t];
 }
 
-export type OverlaySettings = Pick<Settings, 'pingSizePx' | 'pingDurationS' | 'volume' | 'muted' | 'tickSound'>;
+export type OverlaySettings = Pick<Settings, 'pingSizePx' | 'pingDurationS' | 'volume' | 'muted' | 'tickSound' | 'wheel' | 'clickPingId'>;
 
 export const overlaySettings = (s: Settings): OverlaySettings => ({
   pingSizePx: s.pingSizePx, pingDurationS: s.pingDurationS, volume: s.volume, muted: s.muted, tickSound: s.tickSound,
+  wheel: [...s.wheel], clickPingId: s.clickPingId,
 });

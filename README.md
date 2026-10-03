@@ -58,16 +58,17 @@ The Mac version needs an Apple Silicon Mac (M1 or later) and macOS 12 or later. 
 
 On a Mac, use **⌥ Option** instead of Alt, **⌃⌥P** to pause, and the ping icon in the menu bar instead of the tray icon.
 
-The wheel, from the top going clockwise: Danger, Push, On My Way, All In, Assist Me, Need Vision, Enemy Missing, Enemy Vision.
+The wheel, from the top going clockwise: Danger, Push, On My Way, All In, Assist Me, Need Vision, Enemy Missing, Enemy Vision. You can rearrange it and add Bait or Vision Cleared in settings.
 
 ## Settings
 
 <img src="docs/media/settings.png" width="760" alt="The lolPing settings window">
 
 - **Trigger key:** Alt, Ctrl, Shift, Win, Caps Lock, Mouse 4, Mouse 5 or any other key (on a Mac: Option, Control, Shift, Command, Mouse 4, Mouse 5 or any other key). The custom key won't type in other apps while pinging is on.
-- **Alt + click places a generic ping:** off by default, so ordinary Alt + click shortcuts keep working.
+- **Alt + click places a ping:** off by default, so ordinary Alt + click shortcuts keep working. The ping is the one in the centre of the wheel editor (Generic unless you change it).
 - **Enable / disable shortcut:** must include Ctrl, Alt or Win (⌃, ⌥ or ⌘ on a Mac).
-- **Pings and sound:** size, duration, volume, mute and the wheel's tick sound, with a preview of every ping.
+- **Pings and sound:** size, duration, volume, mute and the wheel's tick sound.
+- **Wheel:** drag any ping onto any slice, including Bait and Vision Cleared, or onto the centre to make it the Alt + click ping. Click a ping to preview it. **Reset to default** brings back League's layout.
 - **Launch at Windows startup** (**Open at login** on a Mac): starts hidden in the tray or menu bar.
 - **Language:** follows the system display language, or pick English or 简体中文.
 

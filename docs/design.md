@@ -1,7 +1,7 @@
 # lolPing — Design Spec
 
 **Date:** 2026-10-01
-**Status:** Implemented in v0.1.0
+**Status:** Implemented in v0.1.0; wheel customization (Bait, Vision Cleared, drag-and-drop slots) added in v0.2.1
 
 ## 1. Purpose
 
@@ -25,8 +25,8 @@ A personal desktop toy for Windows that recreates League of Legends' ping wheel 
 | Default trigger | Hold **Alt** and drag with the left mouse button to open the wheel. |
 | Trigger + click (no drag) | Configurable, **off** by default. Off: the click passes through untouched. On: it places a **generic** ping and the click is swallowed. |
 | Toggle | A global hotkey (default **Ctrl+Alt+P**) turns pinging on/off, mirrored in the tray. |
-| Wheel slots | 8 slices, top then clockwise: Danger, Push, On My Way, All In, Assist Me, Need Vision, Enemy Missing, Enemy Vision |
-| Excluded pings | Vision Cleared, Defend/Hold, Target, the yellow "caution" circle |
+| Wheel slots | 8 slices, top then clockwise. Default: Danger, Push, On My Way, All In, Assist Me, Need Vision, Enemy Missing, Enemy Vision. The user can drag any of the 11 pings onto any slot, and pick the trigger+click ping (default Generic), in settings. |
+| Excluded pings | Defend/Hold, Target, the yellow "caution" circle: they need a target, so they wait until lolPing can pick one |
 | Textures | Only standard textures. **Never colourblind (`_cb`) variants.** |
 | Sound | Original League sounds, extracted from the user's local install |
 
@@ -35,6 +35,8 @@ A personal desktop toy for Windows that recreates League of Legends' ping wheel 
 The assets are already extracted into the repo and ship with the app. They come from the user's local League install and are © Riot Games. The project will be published on GitHub with the assets bundled; the owner accepts the risk and will take it down if Riot asks.
 
 ### 3.1 Ping table (single source of truth: `src/shared/pings.ts`)
+
+Slot is the default layout (`DEFAULT_WHEEL`); the user can rearrange it.
 
 | id | Slot | Wheel icon (`assets/textures/`) | On-screen art | Sound (`assets/sounds/`) | Ring colour |
 |---|---|---|---|---|---|
@@ -47,15 +49,18 @@ The assets are already extracted into the repo and ship with the app. They come 
 | `missing` | W | `enemy_missing.png` | `enemy_missing.png` | `MIA.wav` | `#f2c518` |
 | `enemyvision` | NW | `enemy_vision.png` | `pingwheel_enemyvisionrender.png` | `AreaIsWarded.wav` | `#ff3b55` |
 | `generic` | (trigger+click) | `generic_ping.png` | `pingwheel_basicpingrender.png` | `Base.wav` | `#2e8bff` |
+| `bait` | — | `pingwheel_baitrender.png` | `pingwheel_baitrender.png` (the hook; also used as the icon) | `SRP_11.wav` | `#efbc12` |
+| `visioncleared` | — | `vision_cleared.png` | `pingwheel_visionclearedrender.png` | `SRP_6.wav` | `#2b80ff` |
 | wheel tick | — | — | — | `button.wav` | — |
 
-Unused extracted files stay in `assets/` but are never referenced: the `_cb` textures, `caution`, `hold`, `target`, `vision_cleared`, the `pingwheel_*` renders not listed above, and the other sounds.
+Unused extracted files stay in `assets/` but are never referenced: the `_cb` textures, `caution`, `hold`, `target`, the `pingwheel_*` renders not listed above, and the other sounds (`SRP_13.wav` is the structure-defend ping).
 
 ### 3.2 Asset pipeline (already run; kept reproducible)
 
 The extraction scripts live in `tools/extract-assets/`, together with a README. Each step:
 
-1. **Textures:** DDS (DXT5) → PNG with Pillow.
+1. **Textures:** DDS (DXT5) → PNG with Pillow. Bait and Vision Cleared come straight from League's `.tex` files in `Global.wad.client` (`--wad-textures`).
+   No game file maps those two pings to their sounds; `SRP_11` (Bait) and `SRP_6` (Vision Cleared) were identified by ear.
 2. **Sound banks:** read the WAD v3 table of contents with a small Python reader (Python 3.14 has built-in zstd). Names come from CommunityDragon's `hashes.game.txt` list, filtered to sound banks. The ping banks are in `DATA/FINAL/Maps/Shipping/Common.wad.client`:
    - `assets/sounds/wwise2016/sfx/shared/hud_global_events.bnk`
    - `assets/sounds/wwise2016/sfx/shared/hud_global_audio.bnk`
@@ -189,6 +194,7 @@ All coordinates are **physical screen pixels**.
 | Cardinal wedges (N/E/S/W) | extend to radius 288 with a fading gradient |
 | Wedge dividers | thin gold-tinted lines |
 
+- **Slots:** each slice shows the ping from the `wheel` setting; the overlay redraws the icons when it changes.
 - **Center content:** the generic-ping icon, a "PING" label in `#1fa9e0`, and a dim "BACK" hint with a right-click mouse glyph.
 - **Icons:** 48 px at radius 137. Idle icons are desaturated gold (`grayscale(1) sepia(.75) saturate(1.3) brightness(1.15)`). The hovered slice shows the full-colour icon at 1.18× scale and a brightened wedge.
 - **Selection:**
@@ -227,6 +233,8 @@ Several pings can be on screen at once, and each is independent.
 | `trigger` | `alt`/`ctrl`/`shift`/`win`/`capslock`/`mouse4`/`mouse5`/`{vk}` | `alt` |
 | `dragThresholdPx` | 2–40 | 8 |
 | `clickPing` | bool | false |
+| `clickPingId` | ping id | `generic` |
+| `wheel` | 8 distinct ping ids, top then clockwise | `DEFAULT_WHEEL` (an invalid list resets to it) |
 | `toggleHotkey` | `{mods, vk}` | Ctrl+Alt+P |
 | `pingSizePx` | 60–220 | 110 |
 | `pingDurationS` | 1.0–8.0 | 3.2 |
@@ -239,12 +247,16 @@ Changes apply live, with no Save button. Writes are debounced (300 ms) and atomi
 
 ### 8.2 Settings window (matches `prototype/settings-demo.html`)
 
-- **Window:** Fluent UI React v9 components, `backgroundMaterial: 'mica'`, theme follows Windows light/dark, Windows 11 caption buttons, left navigation (Trigger, Toggle, Pings & sound, Preview, App), Windows 11 Settings–style cards.
+- **Window:** Fluent UI React v9 components, `backgroundMaterial: 'mica'`, theme follows Windows light/dark, Windows 11 caption buttons, left navigation (Trigger, Toggle, Pings & sound, Wheel, App), Windows 11 Settings–style cards.
 - **Status card:** at the top, a master on/off switch with a live hint ("Hold Alt and drag… · Ctrl + Alt + P to turn off"). Turning it off dims the dependent cards.
 - **Trigger key:** a Fluent `Dropdown`, *not* a native select, with Keyboard and Mouse option groups plus "Custom key…", which captures the next key press.
 - **Toggle shortcut:** a key-capture field showing keycaps. Click it, press a combination, and it rebinds; Esc cancels. A conflict reported by the helper shows inline and keeps the old binding.
 - **Sliders:** drag distance, ping size, ping duration, volume. **Switches:** trigger+click ping, start enabled, tick sound, launch at startup.
-- **Preview:** a tile per ping with its icon (no `_cb` textures). Clicking a tile plays that ping's sound and spawns it at the center of the primary display.
+- **Wheel** (matches `prototype/wheel-editor-demo.html`): a small wheel with the 8 slots and the trigger+click ping in the centre, beside a tile per ping (no `_cb` textures).
+  - Clicking a tile previews it: plays its sound and spawns it at the center of the primary display.
+  - Drag a tile onto a slot to put it there; a ping already on the wheel swaps places instead, so no ping appears twice. Drag a slot onto another to swap them. Drop on the centre to set the click ping.
+  - Without dragging: click a tile or slot, then click where it goes. Esc cancels. "Reset to default" restores `DEFAULT_WHEEL` and Generic.
+  - The rules live in `src/shared/wheelLayout.ts` as pure functions.
 - **About:** version, asset notice, known limitations, asset problems, and "Open settings folder".
 
 ### 8.3 Tray

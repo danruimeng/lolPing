@@ -1,5 +1,5 @@
 import { WHEEL, pickSlice } from '../../shared/geometry';
-import { WHEEL_PINGS, textureUrl, type PingDef } from '../../shared/pings';
+import { DEFAULT_WHEEL_PINGS, WHEEL_SLOTS, textureUrl, type PingDef } from '../../shared/pings';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -24,6 +24,7 @@ function sector(r0: number, r1: number, a0: number, a1: number): string {
 export class Wheel {
   private readonly wedges: SVGPathElement[] = [];
   private readonly icons: SVGImageElement[] = [];
+  private pings: readonly PingDef[] = DEFAULT_WHEEL_PINGS;
   private hot = -1;
   private ox = 0;
   private oy = 0;
@@ -31,6 +32,12 @@ export class Wheel {
 
   constructor(private readonly svg: SVGSVGElement, private readonly onHover: (slice: number) => void) {
     this.build();
+  }
+
+  /** Changes which ping each slice holds (from the user's wheel layout). */
+  setPings(pings: readonly PingDef[]): void {
+    this.pings = pings;
+    pings.forEach((p, i) => this.icons[i]?.setAttribute('href', textureUrl(p.icon)));
   }
 
   get isOpen(): boolean {
@@ -56,7 +63,7 @@ export class Wheel {
     if (!this.opened) return null;
     const slice = pickSlice(x - this.ox, y - this.oy);
     this.close();
-    return slice >= 0 ? { def: WHEEL_PINGS[slice], x: this.ox, y: this.oy } : null;
+    return slice >= 0 ? { def: this.pings[slice], x: this.ox, y: this.oy } : null;
   }
 
   cancel(): void {
@@ -97,12 +104,13 @@ export class Wheel {
       <radialGradient id="lp-core" cx="0" cy="-10" r="${innerR}" gradientUnits="userSpaceOnUse">
         <stop offset="0" stop-color="#2c5d60"/><stop offset="1" stop-color="#11292c"/></radialGradient>`;
 
-    WHEEL_PINGS.forEach((_, i) => {
+    const slots = [...Array(WHEEL_SLOTS).keys()];
+    slots.forEach((i) => {
       const mid = -90 + i * 45;
       if (i % 2 === 0) el('path', { d: sector(outerR, extR, mid - 22.5, mid + 22.5), fill: 'url(#lp-ext)' }, svg);
     });
     el('circle', { r: (innerR + outerR) / 2, fill: 'none', stroke: 'url(#lp-ring)', 'stroke-width': outerR - innerR, opacity: 0.92 }, svg);
-    WHEEL_PINGS.forEach((_, i) => {
+    slots.forEach((i) => {
       const mid = -90 + i * 45;
       const reach = i % 2 === 0 ? extR : outerR;
       this.wedges.push(el('path', { d: sector(innerR, reach, mid - 22.5, mid + 22.5), fill: 'url(#lp-hot)', 'fill-opacity': 0, class: 'wedge' }, svg));
@@ -110,7 +118,7 @@ export class Wheel {
       const [x1, y1] = polar(outerR, mid - 22.5);
       el('line', { x1: x0, y1: y0, x2: x1, y2: y1, stroke: '#a08a5c', 'stroke-opacity': 0.45, 'stroke-width': 1.2 }, svg);
     });
-    WHEEL_PINGS.forEach((p, i) => {
+    this.pings.forEach((p, i) => {
       const [ix, iy] = polar(iconR, -90 + i * 45);
       this.icons.push(el('image', { href: textureUrl(p.icon), x: ix - iconSize / 2, y: iy - iconSize / 2, width: iconSize, height: iconSize, class: 'icon' }, svg));
     });
